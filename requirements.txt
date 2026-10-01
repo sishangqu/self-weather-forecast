@@ -1,0 +1,7 @@
+requests
+pandas
+matplotlib
+numpy
+statsmodels
+scikit-learn
+xgboost
