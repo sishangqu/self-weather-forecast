@@ -58,6 +58,21 @@
   .daily-row .t .lo{color:var(--sub);margin-left:6px}
 
   .chart{width:100%;height:170px}
+
+  /* ===== 逐小时横向滚动 ===== */
+  .hour-panel{padding-bottom:12px}
+  .hour-wrap{overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+  .hour-wrap::-webkit-scrollbar{display:none}
+  .hour-list{display:flex;gap:10px;min-width:max-content;padding:2px 2px 6px}
+  .hour-item{min-width:58px;text-align:center;padding:10px 6px;border-radius:14px;background:#f3f7fd;border:1px solid var(--line)}
+  .hour-item .ht{font-size:11px;color:var(--sub);white-space:nowrap}
+  .hour-item .hi{font-size:22px;margin:4px 0;line-height:1}
+  .hour-item .htemp{font-size:15px;font-weight:700}
+  .hour-item .hrain{font-size:10px;color:var(--blue);min-height:13px}
+  .hour-item.now{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(47,127,230,.35)}
+  .hour-item.now .ht,.hour-item.now .hrain{color:#e8f0ff}
+  .hour-item.now .hrain{color:#ffd76a}
+
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
   .gcard{background:var(--card);border-radius:16px;padding:14px 16px;box-shadow:0 6px 24px rgba(31,67,120,.06)}
   .gcard .l{font-size:12px;color:var(--sub)}
@@ -124,6 +139,10 @@ const CSV_SOURCES = [
   'https://raw.githubusercontent.com/sishangqu/self-weather-forecast/main/yangzhou_forecast.csv',
   'https://cdn.jsdelivr.net/gh/sishangqu/self-weather-forecast@main/yangzhou_forecast.csv'
 ];
+const HOURLY_SOURCES = [
+  'https://raw.githubusercontent.com/sishangqu/self-weather-forecast/main/hourly_forecast.csv',
+  'https://cdn.jsdelivr.net/gh/sishangqu/self-weather-forecast@main/hourly_forecast.csv'
+];
 const ECHARTS_CDNS = [
   'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
   'https://unpkg.com/echarts@5.4.3/dist/echarts.min.js',
@@ -141,7 +160,7 @@ function skyTheme(p,c){
   if(c==null||c>=50) return ['#92b2d9','#e8eef6'];
   return ['#ffb745','#fdf1d8'];
 }
-function saveCache(rows){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(),rows})) }catch(e){} }
+function saveCache(rows,hourly){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(),rows,hourly:hourly||null})) }catch(e){} }
 function getCache(){ try{ const c=localStorage.getItem(CACHE_KEY); return c?JSON.parse(c):null }catch(e){ return null } }
 
 function loadEcharts(i){
@@ -151,15 +170,17 @@ function loadEcharts(i){
     s.onload=()=>{echartsReady=true;res()};s.onerror=()=>{s.remove();loadEcharts(i+1).then(res)};
     document.head.appendChild(s)});
 }
-async function fetchCSV(){
+async function fetchText(sources){
   let lastErr;
-  for(const url of CSV_SOURCES){try{
+  for(const url of sources){try{
     const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),TIMEOUT_MS);
     const r=await fetch(url+'?t='+Date.now(),{signal:ctrl.signal});clearTimeout(t);
     if(r.ok) return await r.text(); lastErr='HTTP '+r.status;
   }catch(e){lastErr=e.name==='AbortError'?'超时':e.message}}
   throw new Error(lastErr||'全部源失败');
 }
+const fetchCSV=()=>fetchText(CSV_SOURCES);
+const fetchHourly=()=>fetchText(HOURLY_SOURCES);
 function parse(text){
   text=text.replace(/^\uFEFF/,'');
   const lines=text.trim().split('\n'); const head=lines[0].split(',');
@@ -173,18 +194,46 @@ function parse(text){
       rain:num(c[iR]),prob:num(c[iP]),wind:num(c[iW]),gust:num(c[iG]),dir:(c[iDir]||'').trim(),
       hum:num(c[iHum]),pres:num(c[iPre]),cloud:num(c[iCl]),dt:num(c[iDt])}});
 }
+function parseHourly(text){
+  text=text.replace(/^\uFEFF/,'');
+  const lines=text.trim().split('\n'); if(lines.length<2) return [];
+  const head=lines[0].split(',');
+  const find=(...ks)=>{for(let i=0;i<head.length;i++)for(const k of ks)if(head[i].includes(k))return i;return -1};
+  const iT=find('时间'),iA=find('温度'),iF=find('体感'),iP=find('降水概率'),iR=find('降水量'),
+        iW=find('天气代码'),iS=find('风速'),iH=find('湿度'),iC=find('云量');
+  const num=s=>{const v=parseFloat(s);return isNaN(v)?null:v};
+  return lines.slice(1).filter(l=>l.trim()).map(l=>{const c=l.split(',');
+    const t=new Date((c[iT]||'').trim().replace(' ','T')+':00');
+    return {time:t,tstr:(c[iT]||'').trim(),temp:num(c[iA]),feels:num(c[iF]),prob:num(c[iP]),rain:num(c[iR]),
+      wcode:(c[iW]||'').trim(),wind:num(c[iS]),hum:num(c[iH]),cloud:num(c[iC])}}).filter(h=>!isNaN(h.time));
+}
+function wIcon(w){
+  w=parseInt(w,10);
+  if(w>=95)return '⛈️'; if(w>=80)return '🌧️'; if(w>=61)return '🌧️'; if(w>=51)return '🌦️';
+  if(w>=71)return '🌨️'; if(w>=45)return '🌫️'; if(w===0)return '☀️'; if(w<=2)return '⛅'; return '☁️';
+}
+/** 锁定当前时段：从 >= 当前小时的第一条开始，取 24 条 */
+function lockCurrentHour(hourly){
+  if(!hourly||!hourly.length) return [];
+  const now=new Date(); now.setMinutes(0,0,0);
+  let idx=hourly.findIndex(h=>h.time>=now);
+  if(idx<0) idx=0;
+  return hourly.slice(idx, idx+24);
+}
 
 async function load(showSpin){
-  let rows=null, offline=false;
+  let rows=null, hourly=null, offline=false;
   try{
-    const text=await fetchCSV();
-    rows=parse(text);
+    const [t1,t2]=await Promise.allSettled([fetchCSV(),fetchHourly()]);
+    if(t1.status!=='fulfilled') throw new Error(t1.reason&&t1.reason.message?t1.reason.message:'CSV 拉取失败');
+    rows=parse(t1.value);
     if(!rows.length) throw new Error('CSV 为空');
-    saveCache(rows);
+    if(t2.status==='fulfilled'){ hourly=parseHourly(t2.value); if(!hourly.length) hourly=null; }
+    saveCache(rows,hourly);
   }catch(e){
     const c=getCache();
     if(c && c.rows && c.rows.length){
-      rows=c.rows; offline=true;           // 离线兜底：用缓存
+      rows=c.rows; hourly=c.hourly||null; offline=true;           // 离线兜底：用缓存
     }else{
       document.getElementById('skeleton').style.display='none';
       const app=document.getElementById('app'); app.style.display='block';
@@ -193,10 +242,10 @@ async function load(showSpin){
     }
   }
   await loadEcharts(0);
-  render(rows, offline);
+  render(rows, hourly, offline);
 }
 
-function render(rows, offline){
+function render(rows, hourly, offline){
   const t=rows[0];
   document.getElementById('skeleton').style.display='none';
   const app=document.getElementById('app'); app.style.display='block';
@@ -218,6 +267,26 @@ function render(rows, offline){
     <div class="feels">体感 ${t.aavg==null?'--':t.aavg.toFixed(0)}°C</div>
     <div class="meta">湿度 ${t.hum==null?'--':t.hum.toFixed(0)}% · 最大风 ${t.wind==null?'--':t.wind.toFixed(0)}km/h · 气压 ${t.pres==null?'--':t.pres.toFixed(0)}hPa</div>
   </div>`;
+
+  // ==== 逐小时预报：锁定当前时段（从 >= 当前小时的第一条开始，取 24 条） ====
+  const hourItems = lockCurrentHour(hourly);
+  if(hourItems.length){
+    const now=new Date(); const today=now.getDate();
+    const cards=hourItems.map(h=>{
+      const isNow = h.time.getMonth()===now.getMonth() && h.time.getDate()===now.getDate() && h.time.getHours()===now.getHours();
+      const label = isNow ? '现在' : (h.time.getDate()===today ? h.time.getHours()+'时' : (h.time.getMonth()+1)+'/'+h.time.getDate()+' '+h.time.getHours()+'时');
+      return `<div class="hour-item${isNow?' now':''}">
+        <div class="ht">${label}</div>
+        <div class="hi">${wIcon(h.wcode)}</div>
+        <div class="htemp">${h.temp==null?'--':h.temp.toFixed(0)}°</div>
+        <div class="hrain">${h.prob!=null&&h.prob>=30?('☔'+h.prob+'%'):''}</div>
+      </div>`;
+    }).join('');
+    html+=`<div class="panel hour-panel">
+      <div class="panel-title">逐小时 · 从当前时段起 ${hourItems.length}h</div>
+      <div class="hour-wrap"><div class="hour-list">${cards}</div></div>
+    </div>`;
+  }
 
   const days=rows.map(r=>{const d=new Date(r.date+'T00:00:00');
     return `<div class="daily-row">

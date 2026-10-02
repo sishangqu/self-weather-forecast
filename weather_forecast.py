@@ -339,7 +339,7 @@ def main():
     # 逐小时预报（GFS/ECMWF 均值，48 小时）
     try:
         hourly = fetch_hourly(48)
-        hourly["时间"] = hourly["时间"].dt.strftime("%m-%d %H:%M")
+        hourly["时间"] = hourly["时间"].dt.strftime("%Y-%m-%d %H:%M")   # 带年份，前端可锁定当前时段
         hourly.to_csv("hourly_forecast.csv", index=False, encoding="utf-8-sig")
         print(f"      已保存 hourly_forecast.csv（{len(hourly)} 小时）")
     except Exception as e:
