@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>天气 · 自算预报</title>
+<style>
+  :root{
+    --card:#ffffff;
+    --ink:#1b2a4a; --sub:#5b6c88; --line:#e6edf6;
+    --blue:#2f7fe6; --red:#ff6b6b; --green:#26c281;
+    --sk1:#8ec5f7; --sk2:#eef1f6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--ink);
+    background:linear-gradient(180deg,var(--sk1) 0%,var(--sk2) 46%);
+    min-height:100vh; padding-bottom:env(safe-area-inset-bottom);
+  }
+  .phone{max-width:430px;margin:0 auto;min-height:100vh;position:relative}
+
+  /* ===== 导航 ===== */
+  .nav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:calc(env(safe-area-inset-top) + 14px) 20px 12px; color:#fff;
+  }
+  .nav .loc{display:flex;align-items:center;gap:6px;font-size:18px;font-weight:700}
+  .nav .icons{display:flex;gap:16px;font-size:20px}
+  .nav .icons span{background:rgba(255,255,255,.2);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
+  .nav .icons span:active{transform:scale(.92)}
+
+  /* ===== 下拉提示 ===== */
+  #pullHint{position:fixed;top:0;left:0;right:0;text-align:center;color:#5b6c88;font-size:13px;padding:14px 0 6px;transform:translateY(-30px);transition:.2s;z-index:9;pointer-events:none}
+
+  /* ===== 离线标记 ===== */
+  #offlineTag{display:none;margin:0 16px 10px;background:rgba(0,0,0,.45);color:#fff;padding:8px 14px;border-radius:12px;font-size:12px;text-align:center;backdrop-filter:blur(4px)}
+
+  /* ===== 主实况 ===== */
+  .main-weather{text-align:center;color:#fff;padding:8px 20px 22px}
+  .main-weather .big-icon{font-size:84px;line-height:1;filter:drop-shadow(0 6px 14px rgba(0,0,0,.15))}
+  .main-weather .temp{font-size:80px;font-weight:800;line-height:1.05;text-shadow:0 4px 18px rgba(0,0,0,.12)}
+  .main-weather .temp .unit{font-size:30px;font-weight:400;margin-left:4px;opacity:.9}
+  .main-weather .cond{font-size:20px;font-weight:600;margin-top:2px}
+  .main-weather .feels{font-size:14px;opacity:.92;margin-top:4px}
+  .main-weather .meta{font-size:13px;opacity:.88;margin-top:10px;letter-spacing:.3px}
+
+  .body-wrap{padding:0 16px 30px}
+  .panel{background:var(--card);border-radius:20px;box-shadow:0 6px 24px rgba(31,67,120,.07);padding:6px 16px;margin-bottom:14px}
+  .daily-row{display:flex;align-items:center;padding:13px 2px;border-bottom:1px solid var(--line)}
+  .daily-row:last-child{border-bottom:none}
+  .daily-row .d{width:74px;font-size:15px;font-weight:600}
+  .daily-row .d small{display:block;font-size:11px;color:var(--sub);font-weight:400;margin-top:1px}
+  .daily-row .ic{flex:1;text-align:center;font-size:24px}
+  .daily-row .rain-tag{font-size:11px;color:var(--blue);width:44px;text-align:center}
+  .daily-row .t{width:96px;text-align:right;font-size:15px}
+  .daily-row .t .hi{font-weight:700}
+  .daily-row .t .lo{color:var(--sub);margin-left:6px}
+
+  .chart{width:100%;height:170px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .gcard{background:var(--card);border-radius:16px;padding:14px 16px;box-shadow:0 6px 24px rgba(31,67,120,.06)}
+  .gcard .l{font-size:12px;color:var(--sub)}
+  .gcard .v{font-size:22px;font-weight:800;margin-top:6px}
+  .gcard .u{font-size:12px;color:var(--sub);font-weight:400;margin-left:2px}
+  .panel-title{font-size:14px;font-weight:700;color:var(--sub);margin:4px 2px 10px}
+
+  footer{text-align:center;color:#9aa7bd;font-size:11px;line-height:1.7;padding:8px 20px 20px}
+  .error{text-align:center;padding:60px 20px;color:var(--sub)}
+
+  /* ===== 骨架屏 ===== */
+  #skeleton{padding:8px 16px 30px}
+  .sk{background:linear-gradient(90deg,rgba(255,255,255,.45) 25%,rgba(255,255,255,.9) 37%,rgba(255,255,255,.45) 63%);
+      background-size:400% 100%;animation:skload 1.4s ease infinite;border-radius:10px}
+  @keyframes skload{0%{background-position:100% 50%}100%{background-position:0 50%}}
+  .sk-icon{width:80px;height:80px;border-radius:50%;margin:20px auto 16px}
+  .sk-temp{width:200px;height:64px;margin:0 auto;border-radius:14px}
+  .sk-line{width:150px;height:14px;margin:10px auto 0;border-radius:7px}
+  .sk-meta{width:220px;height:12px;margin:14px auto 0;border-radius:6px}
+  .sk-panel{background:rgba(255,255,255,.5);border-radius:20px;padding:10px 16px;margin-top:16px}
+  .sk-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.6)}
+  .sk-row:last-child{border-bottom:none}
+  .sk-cell{height:16px;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div id="pullHint">↓ 下拉刷新</div>
+
+  <!-- 导航 -->
+  <div class="nav">
+    <span class="loc">📍<span id="cityName">扬州</span></span>
+    <div class="icons">
+      <span onclick="load(true)" title="刷新">⟳</span>
+      <span onclick="toast('设置：温度单位/主题 暂未开放')" title="设置">⚙</span>
+    </div>
+  </div>
+
+  <!-- 离线缓存标记 -->
+  <div id="offlineTag"></div>
+
+  <!-- 骨架屏（加载前显示） -->
+  <div id="skeleton">
+    <div class="sk sk-icon"></div>
+    <div class="sk sk-temp"></div>
+    <div class="sk sk-line"></div>
+    <div class="sk sk-meta"></div>
+    <div class="sk-panel">
+      <div class="sk-row"><div class="sk sk-cell" style="width:56px"></div><div class="sk sk-cell" style="width:24px"></div><div class="sk sk-cell" style="width:64px"></div></div>
+      <div class="sk-row"><div class="sk sk-cell" style="width:56px"></div><div class="sk sk-cell" style="width:24px"></div><div class="sk sk-cell" style="width:64px"></div></div>
+      <div class="sk-row"><div class="sk sk-cell" style="width:56px"></div><div class="sk sk-cell" style="width:24px"></div><div class="sk sk-cell" style="width:64px"></div></div>
+      <div class="sk-row"><div class="sk sk-cell" style="width:56px"></div><div class="sk sk-cell" style="width:24px"></div><div class="sk sk-cell" style="width:64px"></div></div>
+      <div class="sk-row"><div class="sk sk-cell" style="width:56px"></div><div class="sk sk-cell" style="width:24px"></div><div class="sk sk-cell" style="width:64px"></div></div>
+    </div>
+  </div>
+
+  <div id="app" style="display:none"></div>
+  <footer>数据：Open-Meteo 观测 + GFS/ECMWF 集成 · 每日自动更新</footer>
+</div>
+
+<script>
+// ================= 配置 =================
+const CSV_SOURCES = [
+  'https://raw.githubusercontent.com/sishangqu/self-weather-forecast/main/yangzhou_forecast.csv',
+  'https://cdn.jsdelivr.net/gh/sishangqu/self-weather-forecast@main/yangzhou_forecast.csv'
+];
+const ECHARTS_CDNS = [
+  'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
+  'https://unpkg.com/echarts@5.4.3/dist/echarts.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js'
+];
+const TIMEOUT_MS = 8000;
+const CACHE_KEY = 'wx_cache_v1';
+let charts=[], echartsReady=false;
+// ========================================
+
+const WEEK=['日','一','二','三','四','五','六'];
+function iconFor(p,c){ if(p>=50)return '🌧️'; if(p>=25)return '🌦️'; if(c==null)return '⛅'; if(c>=80)return '🌧️'; if(c>=50)return '☁️'; if(c>=20)return '⛅'; return '☀️'; }
+function skyTheme(p,c){
+  if(p>=50) return ['#4279b9','#dde8f5'];
+  if(c==null||c>=50) return ['#92b2d9','#e8eef6'];
+  return ['#ffb745','#fdf1d8'];
+}
+function saveCache(rows){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(),rows})) }catch(e){} }
+function getCache(){ try{ const c=localStorage.getItem(CACHE_KEY); return c?JSON.parse(c):null }catch(e){ return null } }
+
+function loadEcharts(i){
+  if(typeof echarts!=='undefined'){echartsReady=true;return Promise.resolve()}
+  if(i>=ECHARTS_CDNS.length) return Promise.resolve();
+  return new Promise(res=>{const s=document.createElement('script');s.src=ECHARTS_CDNS[i];
+    s.onload=()=>{echartsReady=true;res()};s.onerror=()=>{s.remove();loadEcharts(i+1).then(res)};
+    document.head.appendChild(s)});
+}
+async function fetchCSV(){
+  let lastErr;
+  for(const url of CSV_SOURCES){try{
+    const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),TIMEOUT_MS);
+    const r=await fetch(url+'?t='+Date.now(),{signal:ctrl.signal});clearTimeout(t);
+    if(r.ok) return await r.text(); lastErr='HTTP '+r.status;
+  }catch(e){lastErr=e.name==='AbortError'?'超时':e.message}}
+  throw new Error(lastErr||'全部源失败');
+}
+function parse(text){
+  text=text.replace(/^\uFEFF/,'');
+  const lines=text.trim().split('\n'); const head=lines[0].split(',');
+  const find=(...ks)=>{for(let i=0;i<head.length;i++)for(const k of ks)if(head[i].includes(k))return i;return -1};
+  const iD=find('日期'),iH=find('最高温'),iL=find('最低温'),iA=find('平均温'),iAA=find('体感平均');
+  const iR=find('降水量'),iP=find('降水概率'),iW=find('最大风速'),iG=find('最大阵风'),
+        iDir=find('主导风向'),iHum=find('平均湿度'),iPre=find('平均气压'),iCl=find('平均云量'),iDt=find('昼夜温差');
+  const num=s=>{const v=parseFloat(s);return isNaN(v)?null:v};
+  return lines.slice(1).filter(l=>l.trim()).map(l=>{const c=l.split(',');
+    return {date:(c[iD]||'').trim(),high:num(c[iH]),low:num(c[iL]),avg:num(c[iA]),aavg:num(c[iAA]),
+      rain:num(c[iR]),prob:num(c[iP]),wind:num(c[iW]),gust:num(c[iG]),dir:(c[iDir]||'').trim(),
+      hum:num(c[iHum]),pres:num(c[iPre]),cloud:num(c[iCl]),dt:num(c[iDt])}});
+}
+
+async function load(showSpin){
+  let rows=null, offline=false;
+  try{
+    const text=await fetchCSV();
+    rows=parse(text);
+    if(!rows.length) throw new Error('CSV 为空');
+    saveCache(rows);
+  }catch(e){
+    const c=getCache();
+    if(c && c.rows && c.rows.length){
+      rows=c.rows; offline=true;           // 离线兜底：用缓存
+    }else{
+      document.getElementById('skeleton').style.display='none';
+      const app=document.getElementById('app'); app.style.display='block';
+      app.innerHTML=`<div class="error">⚠️ 网络不可用，且无缓存数据<br><br>请联网后下拉或点 ⟳ 刷新</div>`;
+      return;
+    }
+  }
+  await loadEcharts(0);
+  render(rows, offline);
+}
+
+function render(rows, offline){
+  const t=rows[0];
+  document.getElementById('skeleton').style.display='none';
+  const app=document.getElementById('app'); app.style.display='block';
+
+  const [s1,s2]=skyTheme(t.prob,t.cloud);
+  document.documentElement.style.setProperty('--sk1',s1);
+  document.documentElement.style.setProperty('--sk2',s2);
+
+  const tag=document.getElementById('offlineTag');
+  if(offline){
+    tag.style.display='block';
+    tag.textContent='⚠️ 离线模式 · 显示上次缓存数据（请联网下拉刷新）';
+  } else tag.style.display='none';
+
+  let html=`<div class="main-weather">
+    <div class="big-icon">${iconFor(t.prob,t.cloud)}</div>
+    <div class="temp">${t.avg==null?'--':t.avg.toFixed(0)}<span class="unit">°C</span></div>
+    <div class="cond">${t.dir||'—'}风 · ${t.prob>=50?'有降水':t.cloud>=80?'阴':t.cloud>=50?'多云':'晴'}</div>
+    <div class="feels">体感 ${t.aavg==null?'--':t.aavg.toFixed(0)}°C</div>
+    <div class="meta">湿度 ${t.hum==null?'--':t.hum.toFixed(0)}% · 最大风 ${t.wind==null?'--':t.wind.toFixed(0)}km/h · 气压 ${t.pres==null?'--':t.pres.toFixed(0)}hPa</div>
+  </div>`;
+
+  const days=rows.map(r=>{const d=new Date(r.date+'T00:00:00');
+    return `<div class="daily-row">
+      <div class="d">周${WEEK[d.getDay()]}<small>${r.date.slice(5)}</small></div>
+      <div class="ic">${iconFor(r.prob,r.cloud)}</div>
+      <div class="rain-tag">${r.prob!=null&&r.prob>=25?('☔'+r.prob+'%'):''}</div>
+      <div class="t"><span class="hi">${r.high==null?'--':r.high.toFixed(0)}°</span><span class="lo">${r.low==null?'--':r.low.toFixed(0)}°</span></div>
+    </div>`}).join('');
+  html+=`<div class="body-wrap">
+    <div class="panel"><div class="panel-title">未来 ${rows.length} 天预报</div>${days}
+      <div id="chartT" class="chart"></div></div>
+    <div class="panel-title">实况指标</div>
+    <div class="grid">
+      ${gc('体感',t.aavg,'°C',`最高${t.high==null?'--':t.high.toFixed(0)}° / 最低${t.low==null?'--':t.low.toFixed(0)}°`)}
+      ${gc('降水量',t.rain,'mm','今日累计')}
+      ${gc('最大阵风',t.gust,'km/h','')}
+      ${gc('云量',t.cloud,'%','')}
+      ${gc('昼夜温差',t.dt,'°C','')}
+      ${gc('降水概率',t.prob,'%',t.prob>=50?'注意带伞':'')}
+    </div>
+  </div>`;
+
+  app.innerHTML=html;
+
+  if(echartsReady){
+    const el=document.getElementById('chartT'); if(!el) return;
+    const c=echarts.init(el); charts.push(c);
+    const x=rows.map(r=>r.date.slice(5));
+    c.setOption({tooltip:{trigger:'axis'},legend:{data:['最高','平均','最低'],top:0,itemWidth:12,itemHeight:8,textStyle:{fontSize:10}},
+      grid:{left:36,right:10,top:26,bottom:20},xAxis:{type:'category',data:x,boundaryGap:false,axisLabel:{fontSize:9}},
+      yAxis:{type:'value',name:'°C',nameTextStyle:{fontSize:9},axisLabel:{fontSize:9}},series:[
+      {name:'最高',type:'line',data:rows.map(r=>r.high),smooth:true,lineStyle:{width:2,color:'#ff9f43'},itemStyle:{color:'#ff9f43'},symbolSize:5},
+      {name:'平均',type:'line',data:rows.map(r=>r.avg),smooth:true,lineStyle:{width:2.5,color:'#ff6b6b'},itemStyle:{color:'#ff6b6b'},symbolSize:5},
+      {name:'最低',type:'line',data:rows.map(r=>r.low),smooth:true,lineStyle:{width:2,color:'#2f7fe6'},itemStyle:{color:'#2f7fe6'},symbolSize:5}]});
+  } else {
+    const el=document.getElementById('chartT'); if(el) el.style.display='none';
+  }
+}
+function gc(l,v,u,s){return `<div class="gcard"><div class="l">${l}</div><div class="v">${v==null?'--':(Number.isInteger(v)?v:v.toFixed(1))}<span class="u">${u}</span></div><div style="font-size:11px;color:#5b6c88;margin-top:3px">${s||''}</div></div>`}
+
+let toastTimer;
+function toast(msg){let el=document.getElementById('toast'); if(!el){el=document.createElement('div');el.id='toast';
+  el.style.cssText='position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;z-index:99;transition:.3s;opacity:0';
+  document.body.appendChild(el)} el.textContent=msg; el.style.opacity=1;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.style.opacity=0,2000)}
+
+// 供鸿蒙原生桥接调用：window.refreshWeather()
+window.refreshWeather = function(){ load(true); return 'ok'; };
+
+// ===== 页面内下拉刷新（Web 内也可用） =====
+(function(){
+  const ph=document.getElementById('pullHint'); let sy=0, pulling=false, dist=0;
+  window.addEventListener('touchstart',e=>{if(window.scrollY<=0){sy=e.touches[0].clientY;pulling=true;dist=0}},{passive:true});
+  window.addEventListener('touchmove',e=>{if(pulling){dist=Math.max(0,e.touches[0].clientY-sy);
+    ph.style.transform=`translateY(${Math.min(80,dist*0.6)}px)`; ph.style.opacity=dist>40?1:0.4}},{passive:true});
+  window.addEventListener('touchend',()=>{if(pulling&&dist>70){ph.style.transform='translateY(-30px)';load(true)}
+    else ph.style.transform='translateY(-30px)'; ph.style.opacity=0; pulling=false; dist=0},{passive:true});
+})();
+
+window.onload=()=>load(true);
+</script>
+</body>
+</html>

@@ -100,6 +100,55 @@ def fetch_nwp(model_id: str) -> pd.DataFrame:
     return pd.DataFrame({"ds": pd.to_datetime(d["time"]), **{k: d[k] for k in NWP_VARS}})
 
 
+def fetch_hourly(hours: int = 48) -> pd.DataFrame:
+    """拉未来 hours 小时逐小时预报（GFS/ECMWF 均值），供前端逐小时曲线。"""
+    print(f"      拉逐小时预报（未来 {hours} 小时）...")
+    r = requests.get("https://api.open-meteo.com/v1/forecast", params={
+        "latitude": LAT, "longitude": LON,
+        "hourly": "temperature_2m,apparent_temperature,precipitation_probability,"
+                  "precipitation,weathercode,wind_speed_10m,relative_humidity_2m,cloud_cover",
+        "forecast_days": max(2, hours // 24 + 1),
+        "timezone": "Asia/Shanghai",
+    }, timeout=60)
+    r.raise_for_status()
+    d = r.json()["hourly"]
+    df = pd.DataFrame({
+        "时间": pd.to_datetime(d["time"]),
+        "温度(°C)": d["temperature_2m"],
+        "体感(°C)": d["apparent_temperature"],
+        "降水概率(%)": d["precipitation_probability"],
+        "降水量(mm)": d["precipitation"],
+        "天气代码": d["weathercode"],
+        "风速(km/h)": d["wind_speed_10m"],
+        "湿度(%)": d["relative_humidity_2m"],
+        "云量(%)": d["cloud_cover"],
+    }).head(hours)
+    return df
+
+
+def fetch_warnings(province_kw: str = "江苏", city_kw: str = "扬州") -> list:
+    """从中央气象台拉全国预警，过滤出目标省份/城市。失败返回空列表（不影响主流程）。"""
+    try:
+        r = requests.get("http://www.nmc.cn/rest/findAlarm", params={"type": "1"}, timeout=20,
+                         headers={"User-Agent": "Mozilla/5.0"})
+        r.raise_for_status()
+        items = r.json()["data"]["page"]["list"]
+        out = []
+        for it in items:
+            title = it.get("title", "")
+            if province_kw in title or city_kw in title:
+                out.append({
+                    "title": title,
+                    "time": it.get("issuetime", ""),
+                    "url": "http://www.nmc.cn" + it.get("url", ""),
+                    "pic": it.get("pic", ""),
+                })
+        return out
+    except Exception as e:
+        print(f"      预警拉取失败（忽略）: {e}")
+        return []
+
+
 # =============================================================
 # 2. 四个统计模型
 # =============================================================
@@ -157,7 +206,7 @@ def _build_row(df_hist, target_col, next_doy):
     return np.nan_to_num(np.array(x, dtype=float), nan=0.0).reshape(1, -1)
 
 
-def m4_xgb(df, target_col, n):
+def m4_xgb(df, target_col, n, start_date=None):
     import xgboost as xgb
     s = df[target_col].astype(float)
     X_rows, y_rows = [], []
@@ -170,8 +219,10 @@ def m4_xgb(df, target_col, n):
         subsample=0.8, colsample_bytree=0.8, random_state=42, n_jobs=2,
     ).fit(np.array(X_rows), np.array(y_rows))
     hist = df.copy(); preds = []; last_date = hist["ds"].iloc[-1]
-    for j in range(1, n+1):
-        nd = last_date + timedelta(days=j); ndoy = nd.timetuple().tm_yday
+    # 预测从 start_date 开始（回测时传 train 末+1，最终预测传今天）
+    start = start_date if start_date is not None else (last_date + timedelta(days=1))
+    for j in range(n):
+        nd = start + timedelta(days=j); ndoy = nd.timetuple().tm_yday
         yhat = float(model.predict(_build_row(hist, target_col, ndoy))[0])
         preds.append(yhat)
         nr = {c: hist[c].iloc[-1] for c in NUMERIC_VARS}
@@ -183,11 +234,14 @@ def m4_xgb(df, target_col, n):
 # =============================================================
 # 3. 单要素：跑所有模型
 # =============================================================
-def forecast_variable(df, nwps, col, n):
+def forecast_variable(df, nwps, col, n, start_date=None):
     s = df[col].astype(float).reset_index(drop=True)
     doys = df["doy"].reset_index(drop=True)
-    future_doys = [(df["ds"].iloc[-1] + timedelta(days=i)).timetuple().tm_yday
-                   for i in range(1, n+1)]
+    # 预测第一天：默认 = 今天；回测时用 train 末+1
+    if start_date is None:
+        start_date = (df["ds"].iloc[-1] + timedelta(days=1)).date()
+    future_doys = [(start_date + timedelta(days=i)).timetuple().tm_yday
+                   for i in range(n)]
 
     cut = len(s) - BACKTEST_DAYS
     train_s, test_s = s.iloc[:cut], s.iloc[cut:].values
@@ -211,8 +265,9 @@ def forecast_variable(df, nwps, col, n):
         models["M3_HW"] = (p3t, p3f)
     except Exception: pass
     try:
-        p4t = m4_xgb(df.iloc[:cut].copy(), col, BACKTEST_DAYS)
-        p4f = m4_xgb(df, col, n)
+        p4t = m4_xgb(df.iloc[:cut].copy(), col, BACKTEST_DAYS,
+                     start_date=(df["ds"].iloc[cut] if cut < len(df) else None))
+        p4f = m4_xgb(df, col, n, start_date=start_date)
         models["M4_XGB"] = (p4t, p4f)
     except Exception: pass
 
@@ -244,7 +299,7 @@ def ensemble(scored):
     return final, dict(zip(names, np.round(weights, 3)))
 
 
-def forecast_rain_prob(df, n):
+def forecast_rain_prob(df, n, start_date=None):
     has_rain = (df["precipitation_sum"] > RAIN_THRESHOLD).astype(int)
     tmp = pd.DataFrame({"doy": df["doy"], "h": has_rain})
     clim = tmp.groupby("doy")["h"].mean()
@@ -252,9 +307,10 @@ def forecast_rain_prob(df, n):
     clim = s.rolling(15, center=True).mean().iloc[7:-7]
     bias = has_rain.tail(ANOMALY_WINDOW).mean() - clim.loc[df.tail(ANOMALY_WINDOW)["doy"]].mean()
     out = []
-    last = df["ds"].iloc[-1]
-    for i in range(1, n+1):
-        d = (last + timedelta(days=i)).timetuple().tm_yday
+    if start_date is None:
+        start_date = (df["ds"].iloc[-1] + timedelta(days=1)).date()
+    for i in range(n):
+        d = (start_date + timedelta(days=i)).timetuple().tm_yday
         out.append(np.clip(clim[d] + bias, 0.02, 0.98))
     return np.array(out)
 
@@ -277,22 +333,43 @@ def main():
         except Exception as e:
             print(f"      {name} 失败: {e}")
 
-    last = df["ds"].iloc[-1]
-    dates = [last + timedelta(days=i) for i in range(1, FORECAST_DAYS+1)]
+    # 预报锚定今天：未来 N 天 = 今天 ~ 今天+N-1（而非从历史末+1）
+    start_date = datetime.now().date()
+
+    # 逐小时预报（GFS/ECMWF 均值，48 小时）
+    try:
+        hourly = fetch_hourly(48)
+        hourly["时间"] = hourly["时间"].dt.strftime("%m-%d %H:%M")
+        hourly.to_csv("hourly_forecast.csv", index=False, encoding="utf-8-sig")
+        print(f"      已保存 hourly_forecast.csv（{len(hourly)} 小时）")
+    except Exception as e:
+        print(f"      逐小时拉取失败（忽略）: {e}")
+
+    # 突发天气预警（中央气象台）
+    try:
+        import json
+        warnings = fetch_warnings(province_kw="江苏", city_kw="扬州")
+        with open("warning.json", "w", encoding="utf-8") as f:
+            json.dump(warnings, f, ensure_ascii=False, indent=2)
+        print(f"      已保存 warning.json（{len(warnings)} 条预警）")
+    except Exception as e:
+        print(f"      预警保存失败（忽略）: {e}")
+
+    dates = [start_date + timedelta(days=i) for i in range(FORECAST_DAYS)]
     result = pd.DataFrame({"日期": dates})
     log = []
 
     print("[3/7] 逐要素跑 6 模型 + 集成 ...")
     for api_col, out_col in NUMERIC_VARS.items():
-        scored = forecast_variable(df, nwps, api_col, FORECAST_DAYS)
+        scored = forecast_variable(df, nwps, api_col, FORECAST_DAYS, start_date)
         final, weights = ensemble(scored)
         result[out_col] = np.round(final, 1)
         wstr = "  ".join(f"{k}:{v}" for k, v in weights.items())
         log.append(f"  {out_col:14s}  {wstr}")
 
-    result["降水概率"] = [f"{int(p)}%" for p in (forecast_rain_prob(df, FORECAST_DAYS)*100).round(0)]
+    result["降水概率"] = [f"{int(p)}%" for p in (forecast_rain_prob(df, FORECAST_DAYS, start_date)*100).round(0)]
     wdir = df.groupby("doy")["wind_dir"].mean()
-    future_doys = [(last + timedelta(days=i)).timetuple().tm_yday for i in range(1, FORECAST_DAYS+1)]
+    future_doys = [(start_date + timedelta(days=i)).timetuple().tm_yday for i in range(FORECAST_DAYS)]
     result["主导风向"] = [wind_dir_label(wdir[d]) for d in future_doys]
     result["昼夜温差(°C)"] = (result["最高温(°C)"] - result["最低温(°C)"]).round(1)
     result["日期"] = pd.to_datetime(result["日期"]).dt.date
@@ -332,9 +409,8 @@ def main():
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
     fig.suptitle(f"{CITY_NAME}未来{FORECAST_DAYS}天·其他要素预报", fontsize=13)
     plt.tight_layout(); plt.savefig("chart_others.png", dpi=130)
-    print("\n[7/7] 已保存：yangzhou_forecast.csv, chart_temperature.png, chart_others.png")
+    print("\n[7/7] 已保存：yangzhou_forecast.csv, hourly_forecast.csv, warning.json, chart_temperature.png, chart_others.png")
 
 
 if __name__ == "__main__":
     main()
-#（注：内容由AI生成）
