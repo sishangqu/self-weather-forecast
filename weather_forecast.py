@@ -356,7 +356,7 @@ def wind_dir_label(deg):
 
 def main():
     parser = argparse.ArgumentParser(description="自算天气预报（297 城）")
-    parser.add_argument("--city", help="只计算指定城市（file 或中文名，如 --city wuxi），默认全部")
+    parser.add_argument("--city", help="只计算指定城市（file 或中文名，逗号分隔可多城，如 --city wuxi 或 --city yangzhou,wuxi），默认全部")
     parser.add_argument("--gen-cities-json", action="store_true",
                         help="只生成 cities.json（纯标准库，供 finalize job / 前端使用）")
     args = parser.parse_args()
@@ -368,10 +368,12 @@ def main():
     CITIES, _ = load_city_list()
     cities = CITIES
     if args.city:
-        cities = [c for c in CITIES if c["file"] == args.city or args.city in c["name"]]
-        if not cities:
-            print(f"未知城市: {args.city}")
-            return
+        cities = []
+        for n in [x.strip() for x in args.city.split(",") if x.strip()]:
+            hit = [c for c in CITIES if c["file"] == n or n in c["name"]]
+            if not hit:
+                print(f"未知城市: {n}")
+            cities.extend(hit)
 
     for city in cities:
         print("\n" + "=" * 64)
