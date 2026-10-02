@@ -95,9 +95,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 下载所有组的 artifact 到工作区（每组各含 data/ 子集，同名目录自动合并）
+      # 下载所有组的 artifact 到工作区（每组一个 weather-* 目录，内含各自 data/ 子集）
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+
+      # v4 下载后每个 artifact 一个目录：把所有 weather-*/data 合并到根 data/
+      - name: Merge artifact data
+        run: |
+          mkdir -p data
+          for d in weather-*/; do
+            if [ -d "$d/data" ]; then cp -r "$d/data/." data/; fi
+          done
+          echo "合并后 data 文件数: $(find data -type f | wc -l)"
+          rm -rf weather-*
 
       # 生成 cities.json（前端城市列表，纯标准库无需装依赖）
       - name: Generate cities.json
