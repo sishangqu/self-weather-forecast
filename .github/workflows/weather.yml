@@ -10,44 +10,45 @@ permissions:
   contents: write      # 允许把生成的图片/CSV 提交回仓库
 
 jobs:
-  # ============ 并行计算：20 城（GitHub 免费账户默认并发上限 20）============
+  # ============ 并行计算：297 城分 30 组，每组 10 城串行；30 个 job 并行 ============
+  # 说明：GitHub 单个 workflow 最多 256 个 job，所以不能一城一 job，改为一组一 job。
   forecast:
-    name: ${{ matrix.city }}
+    name: group-${{ matrix.group }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 90
     strategy:
-      fail-fast: false          # 单个城市失败不影响其他城市
+      fail-fast: false          # 单个组失败不影响其他组
       matrix:
-        city: [            shijiazhuang, tangshan, qinhuangdao, handan, xingtai, baoding, zhangjiakou, chengde, cangzhou, langfang,
-            hengshui, taiyuan, datong, yangquan, changzhi, jincheng, shuozhou, jinzhong, yuncheng, xinzhou,
-            linfen, huhehaote, baotou, wuhai, chifeng, tongliao, eerduosi, hulunbeier, bayannaoer, wulanchabu,
-            shenyang, dalian, anshan, fushun, benxi, dandong, jinzhou, yingkou, fuxin, liaoyang,
-            panjin, tieling, chaoyang, huludao, changchun, jilin, siping, liaoyuan, tonghua, baishan,
-            songyuan, baicheng, haerbin, qiqihaer, jixi, hegang, shuangyashan, daqing, yichun, jiamusi,
-            qitaihe, mudanjiang, heihe, suihua, nanjing, wuxi, xuzhou, changzhou, suzhou, nantong,
-            lianyungang, huaian, yancheng, yangzhou, zhenjiang, taizhou_js, suqian, hangzhou, ningbo, wenzhou,
-            jiaxing, huzhou, shaoxing, jinhua, quzhou, zhoushan, taizhou, lishui, hefei, wuhu,
-            bengbu, huainan, maanshan, huaibei, tongling, anqing, huangshan, chuzhou, fuyang, suzhou_ah,
-            liuan, bozhou, chizhou, xuancheng, fuzhou, xiamen, putian, sanming, quanzhou, zhangzhou,
-            nanping, longyan, ningde, nanchang, jingdezhen, pingxiang, jiujiang, xinyu, yingtan, ganzhou,
-            jian, yichun_jx, fuzhou_jx, shangrao, jinan, qingdao, zibo, zaozhuang, dongying, yantai,
-            weifang, jining, weihai, rizhao, linyi, dezhou, liaocheng, binzhou, heze, zhengzhou,
-            kaifeng, luoyang, pingdingshan, anyang, hebi, xinxiang, jiaozuo, puyang, xuchang, luohe,
-            sanmenxia, nanyang, shangqiu, xinyang, zhoukou, zhumadian, wuhan, huangshi, shiyan, yichang,
-            xiangyang, ezhou, jingmen, xiaogan, jingzhou, huanggang, xianning, suizhou, changsha, zhuzhou,
-            xiangtan, hengyang, shaoyang, yueyang, changde, zhangjiajie, yiyang, chenzhou, yongzhou, huaihua,
-            loudi, guangzhou, shaoguan, shenzhen, zhuhai, shantou, foshan, jiangmen, zhanjiang, maoming,
-            zhaoqing, huizhou, meizhou, shanwei, heyuan, yangjiang, qingyuan, dongguan, zhongshan, chaozhou,
-            jieyang, yunfu, nanning, liuzhou, guilin, wuzhou, beihai, fangchenggang, qinzhou, guigang,
-            yulin, baise, hezhou, hechi, laibin, chongzuo, haikou, sanya, danzhou, chengdu,
-            zigong, panzhihua, luzhou, deyang, mianyang, guangyuan, suining, neijiang, leshan, nanchong,
-            meishan, yibin, guangan, dazhou, yaan, bazhong, ziyang, guiyang, liupanshui, zunyi,
-            anshun, bijie, tongren, kunming, qujing, yuxi, baoshan, zhaotong, lijiang, puer,
-            lincang, lasa, rikaze, changdu, linzhi, shannan, naqu, xian, tongchuan, baoji,
-            xianyang, weinan, yanan, hanzhong, yulin_sx, ankang, shangluo, lanzhou, jiayuguan, jinchang,
-            baiyin, tianshui, wuwei, zhangye, pingliang, jiuquan, qingyang, dingxi, longnan, xining,
-            haidong, yinchuan, shizuishan, wuzhong, guyuan, zhongwei, wulumuqi, karamay, turpan, hami,
-            beijing, tianjin, shanghai, chongqing, lvliang, taian, sansha]
+        - [shijiazhuang,tangshan,qinhuangdao,handan,xingtai,baoding,zhangjiakou,chengde,cangzhou,langfang]
+        - [hengshui,taiyuan,datong,yangquan,changzhi,jincheng,shuozhou,jinzhong,yuncheng,xinzhou]
+        - [linfen,huhehaote,baotou,wuhai,chifeng,tongliao,eerduosi,hulunbeier,bayannaoer,wulanchabu]
+        - [shenyang,dalian,anshan,fushun,benxi,dandong,jinzhou,yingkou,fuxin,liaoyang]
+        - [panjin,tieling,chaoyang,huludao,changchun,jilin,siping,liaoyuan,tonghua,baishan]
+        - [songyuan,baicheng,haerbin,qiqihaer,jixi,hegang,shuangyashan,daqing,yichun,jiamusi]
+        - [qitaihe,mudanjiang,heihe,suihua,nanjing,wuxi,xuzhou,changzhou,suzhou,nantong]
+        - [lianyungang,huaian,yancheng,yangzhou,zhenjiang,taizhou_js,suqian,hangzhou,ningbo,wenzhou]
+        - [jiaxing,huzhou,shaoxing,jinhua,quzhou,zhoushan,taizhou,lishui,hefei,wuhu]
+        - [bengbu,huainan,maanshan,huaibei,tongling,anqing,huangshan,chuzhou,fuyang,suzhou_ah]
+        - [liuan,bozhou,chizhou,xuancheng,fuzhou,xiamen,putian,sanming,quanzhou,zhangzhou]
+        - [nanping,longyan,ningde,nanchang,jingdezhen,pingxiang,jiujiang,xinyu,yingtan,ganzhou]
+        - [jian,yichun_jx,fuzhou_jx,shangrao,jinan,qingdao,zibo,zaozhuang,dongying,yantai]
+        - [weifang,jining,weihai,rizhao,linyi,dezhou,liaocheng,binzhou,heze,zhengzhou]
+        - [kaifeng,luoyang,pingdingshan,anyang,hebi,xinxiang,jiaozuo,puyang,xuchang,luohe]
+        - [sanmenxia,nanyang,shangqiu,xinyang,zhoukou,zhumadian,wuhan,huangshi,shiyan,yichang]
+        - [xiangyang,ezhou,jingmen,xiaogan,jingzhou,huanggang,xianning,suizhou,changsha,zhuzhou]
+        - [xiangtan,hengyang,shaoyang,yueyang,changde,zhangjiajie,yiyang,chenzhou,yongzhou,huaihua]
+        - [loudi,guangzhou,shaoguan,shenzhen,zhuhai,shantou,foshan,jiangmen,zhanjiang,maoming]
+        - [zhaoqing,huizhou,meizhou,shanwei,heyuan,yangjiang,qingyuan,dongguan,zhongshan,chaozhou]
+        - [jieyang,yunfu,nanning,liuzhou,guilin,wuzhou,beihai,fangchenggang,qinzhou,guigang]
+        - [yulin,baise,hezhou,hechi,laibin,chongzuo,haikou,sanya,danzhou,chengdu]
+        - [zigong,panzhihua,luzhou,deyang,mianyang,guangyuan,suining,neijiang,leshan,nanchong]
+        - [meishan,yibin,guangan,dazhou,yaan,bazhong,ziyang,guiyang,liupanshui,zunyi]
+        - [anshun,bijie,tongren,kunming,qujing,yuxi,baoshan,zhaotong,lijiang,puer]
+        - [lincang,lasa,rikaze,changdu,linzhi,shannan,naqu,xian,tongchuan,baoji]
+        - [xianyang,weinan,yanan,hanzhong,yulin_sx,ankang,shangluo,lanzhou,jiayuguan,jinchang]
+        - [baiyin,tianshui,wuwei,zhangye,pingliang,jiuquan,qingyang,dingxi,longnan,xining]
+        - [haidong,yinchuan,shizuishan,wuzhong,guyuan,zhongwei,wulumuqi,karamay,turpan,hami]
+        - [beijing,tianjin,shanghai,chongqing,lvliang,taian,sansha]
 
     steps:
       - name: Checkout
@@ -70,23 +71,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 只算本 job 的城市
-      - name: Run forecast (${{ matrix.city }})
-        run: python weather_forecast.py --city ${{ matrix.city }}
+      # 只算本组城市（逗号分隔，脚本内逐城处理）
+      - name: Run forecast (${{ matrix.group }})
+        run: python weather_forecast.py --city "${{ matrix.group }}"
 
-      # 产物暂存 artifact，由 finalize 统一提交（避免 297 job 同时 push 冲突）
+      # 产物暂存 artifact（每个 job 上传各自的 data/，由 finalize 合并提交）
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: weather-${{ matrix.city }}
-          path: |
-            data/**/${{ matrix.city }}_*.csv
-            data/**/${{ matrix.city }}_*.json
-            data/**/chart_${{ matrix.city }}_*.png
+          name: weather-${{ github.job }}
+          path: data/
           retention-days: 90
           if-no-files-found: warn
 
-  # ============ 合并：等全部城市算完，统一提交回仓库 ============
+  # ============ 合并：等全部组算完，统一提交回仓库 ============
   finalize:
     name: Merge and commit
     runs-on: ubuntu-latest
@@ -96,7 +94,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 下载所有城市的 artifact 到工作区（不同城市文件名前缀不同，无冲突）
+      # 下载所有组的 artifact 到工作区（每组各含 data/ 子集，同名目录自动合并）
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
