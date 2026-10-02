@@ -1,0 +1,1376 @@
+[
+ {
+  "province": "河北省",
+  "province_file": "hebei",
+  "cities": [
+   {
+    "name": "石家庄市",
+    "file": "shijiazhuang"
+   },
+   {
+    "name": "唐山市",
+    "file": "tangshan"
+   },
+   {
+    "name": "秦皇岛市",
+    "file": "qinhuangdao"
+   },
+   {
+    "name": "邯郸市",
+    "file": "handan"
+   },
+   {
+    "name": "邢台市",
+    "file": "xingtai"
+   },
+   {
+    "name": "保定市",
+    "file": "baoding"
+   },
+   {
+    "name": "张家口市",
+    "file": "zhangjiakou"
+   },
+   {
+    "name": "承德市",
+    "file": "chengde"
+   },
+   {
+    "name": "沧州市",
+    "file": "cangzhou"
+   },
+   {
+    "name": "廊坊市",
+    "file": "langfang"
+   },
+   {
+    "name": "衡水市",
+    "file": "hengshui"
+   }
+  ]
+ },
+ {
+  "province": "山西省",
+  "province_file": "shanxi",
+  "cities": [
+   {
+    "name": "太原市",
+    "file": "taiyuan"
+   },
+   {
+    "name": "大同市",
+    "file": "datong"
+   },
+   {
+    "name": "阳泉市",
+    "file": "yangquan"
+   },
+   {
+    "name": "长治市",
+    "file": "changzhi"
+   },
+   {
+    "name": "晋城市",
+    "file": "jincheng"
+   },
+   {
+    "name": "朔州市",
+    "file": "shuozhou"
+   },
+   {
+    "name": "晋中市",
+    "file": "jinzhong"
+   },
+   {
+    "name": "运城市",
+    "file": "yuncheng"
+   },
+   {
+    "name": "忻州市",
+    "file": "xinzhou"
+   },
+   {
+    "name": "临汾市",
+    "file": "linfen"
+   },
+   {
+    "name": "吕梁市",
+    "file": "lvliang"
+   }
+  ]
+ },
+ {
+  "province": "内蒙古自治区",
+  "province_file": "neimenggu",
+  "cities": [
+   {
+    "name": "呼和浩特市",
+    "file": "huhehaote"
+   },
+   {
+    "name": "包头市",
+    "file": "baotou"
+   },
+   {
+    "name": "乌海市",
+    "file": "wuhai"
+   },
+   {
+    "name": "赤峰市",
+    "file": "chifeng"
+   },
+   {
+    "name": "通辽市",
+    "file": "tongliao"
+   },
+   {
+    "name": "鄂尔多斯市",
+    "file": "eerduosi"
+   },
+   {
+    "name": "呼伦贝尔市",
+    "file": "hulunbeier"
+   },
+   {
+    "name": "巴彦淖尔市",
+    "file": "bayannaoer"
+   },
+   {
+    "name": "乌兰察布市",
+    "file": "wulanchabu"
+   }
+  ]
+ },
+ {
+  "province": "辽宁省",
+  "province_file": "liaoning",
+  "cities": [
+   {
+    "name": "沈阳市",
+    "file": "shenyang"
+   },
+   {
+    "name": "大连市",
+    "file": "dalian"
+   },
+   {
+    "name": "鞍山市",
+    "file": "anshan"
+   },
+   {
+    "name": "抚顺市",
+    "file": "fushun"
+   },
+   {
+    "name": "本溪市",
+    "file": "benxi"
+   },
+   {
+    "name": "丹东市",
+    "file": "dandong"
+   },
+   {
+    "name": "锦州市",
+    "file": "jinzhou"
+   },
+   {
+    "name": "营口市",
+    "file": "yingkou"
+   },
+   {
+    "name": "阜新市",
+    "file": "fuxin"
+   },
+   {
+    "name": "辽阳市",
+    "file": "liaoyang"
+   },
+   {
+    "name": "盘锦市",
+    "file": "panjin"
+   },
+   {
+    "name": "铁岭市",
+    "file": "tieling"
+   },
+   {
+    "name": "朝阳市",
+    "file": "chaoyang"
+   },
+   {
+    "name": "葫芦岛市",
+    "file": "huludao"
+   }
+  ]
+ },
+ {
+  "province": "吉林省",
+  "province_file": "jilin",
+  "cities": [
+   {
+    "name": "长春市",
+    "file": "changchun"
+   },
+   {
+    "name": "吉林市",
+    "file": "jilin"
+   },
+   {
+    "name": "四平市",
+    "file": "siping"
+   },
+   {
+    "name": "辽源市",
+    "file": "liaoyuan"
+   },
+   {
+    "name": "通化市",
+    "file": "tonghua"
+   },
+   {
+    "name": "白山市",
+    "file": "baishan"
+   },
+   {
+    "name": "松原市",
+    "file": "songyuan"
+   },
+   {
+    "name": "白城市",
+    "file": "baicheng"
+   }
+  ]
+ },
+ {
+  "province": "黑龙江省",
+  "province_file": "heilongjiang",
+  "cities": [
+   {
+    "name": "哈尔滨市",
+    "file": "haerbin"
+   },
+   {
+    "name": "齐齐哈尔市",
+    "file": "qiqihaer"
+   },
+   {
+    "name": "鸡西市",
+    "file": "jixi"
+   },
+   {
+    "name": "鹤岗市",
+    "file": "hegang"
+   },
+   {
+    "name": "双鸭山市",
+    "file": "shuangyashan"
+   },
+   {
+    "name": "大庆市",
+    "file": "daqing"
+   },
+   {
+    "name": "伊春市",
+    "file": "yichun"
+   },
+   {
+    "name": "佳木斯市",
+    "file": "jiamusi"
+   },
+   {
+    "name": "七台河市",
+    "file": "qitaihe"
+   },
+   {
+    "name": "牡丹江市",
+    "file": "mudanjiang"
+   },
+   {
+    "name": "黑河市",
+    "file": "heihe"
+   },
+   {
+    "name": "绥化市",
+    "file": "suihua"
+   }
+  ]
+ },
+ {
+  "province": "江苏省",
+  "province_file": "jiangsu",
+  "cities": [
+   {
+    "name": "南京市",
+    "file": "nanjing"
+   },
+   {
+    "name": "无锡市",
+    "file": "wuxi"
+   },
+   {
+    "name": "徐州市",
+    "file": "xuzhou"
+   },
+   {
+    "name": "常州市",
+    "file": "changzhou"
+   },
+   {
+    "name": "苏州市",
+    "file": "suzhou"
+   },
+   {
+    "name": "南通市",
+    "file": "nantong"
+   },
+   {
+    "name": "连云港市",
+    "file": "lianyungang"
+   },
+   {
+    "name": "淮安市",
+    "file": "huaian"
+   },
+   {
+    "name": "盐城市",
+    "file": "yancheng"
+   },
+   {
+    "name": "扬州市",
+    "file": "yangzhou"
+   },
+   {
+    "name": "镇江市",
+    "file": "zhenjiang"
+   },
+   {
+    "name": "泰州市",
+    "file": "taizhou_js"
+   },
+   {
+    "name": "宿迁市",
+    "file": "suqian"
+   }
+  ]
+ },
+ {
+  "province": "浙江省",
+  "province_file": "zhejiang",
+  "cities": [
+   {
+    "name": "杭州市",
+    "file": "hangzhou"
+   },
+   {
+    "name": "宁波市",
+    "file": "ningbo"
+   },
+   {
+    "name": "温州市",
+    "file": "wenzhou"
+   },
+   {
+    "name": "嘉兴市",
+    "file": "jiaxing"
+   },
+   {
+    "name": "湖州市",
+    "file": "huzhou"
+   },
+   {
+    "name": "绍兴市",
+    "file": "shaoxing"
+   },
+   {
+    "name": "金华市",
+    "file": "jinhua"
+   },
+   {
+    "name": "衢州市",
+    "file": "quzhou"
+   },
+   {
+    "name": "舟山市",
+    "file": "zhoushan"
+   },
+   {
+    "name": "台州市",
+    "file": "taizhou"
+   },
+   {
+    "name": "丽水市",
+    "file": "lishui"
+   }
+  ]
+ },
+ {
+  "province": "安徽省",
+  "province_file": "anhui",
+  "cities": [
+   {
+    "name": "合肥市",
+    "file": "hefei"
+   },
+   {
+    "name": "芜湖市",
+    "file": "wuhu"
+   },
+   {
+    "name": "蚌埠市",
+    "file": "bengbu"
+   },
+   {
+    "name": "淮南市",
+    "file": "huainan"
+   },
+   {
+    "name": "马鞍山市",
+    "file": "maanshan"
+   },
+   {
+    "name": "淮北市",
+    "file": "huaibei"
+   },
+   {
+    "name": "铜陵市",
+    "file": "tongling"
+   },
+   {
+    "name": "安庆市",
+    "file": "anqing"
+   },
+   {
+    "name": "黄山市",
+    "file": "huangshan"
+   },
+   {
+    "name": "滁州市",
+    "file": "chuzhou"
+   },
+   {
+    "name": "阜阳市",
+    "file": "fuyang"
+   },
+   {
+    "name": "宿州市",
+    "file": "suzhou_ah"
+   },
+   {
+    "name": "六安市",
+    "file": "liuan"
+   },
+   {
+    "name": "亳州市",
+    "file": "bozhou"
+   },
+   {
+    "name": "池州市",
+    "file": "chizhou"
+   },
+   {
+    "name": "宣城市",
+    "file": "xuancheng"
+   }
+  ]
+ },
+ {
+  "province": "福建省",
+  "province_file": "fujian",
+  "cities": [
+   {
+    "name": "福州市",
+    "file": "fuzhou"
+   },
+   {
+    "name": "厦门市",
+    "file": "xiamen"
+   },
+   {
+    "name": "莆田市",
+    "file": "putian"
+   },
+   {
+    "name": "三明市",
+    "file": "sanming"
+   },
+   {
+    "name": "泉州市",
+    "file": "quanzhou"
+   },
+   {
+    "name": "漳州市",
+    "file": "zhangzhou"
+   },
+   {
+    "name": "南平市",
+    "file": "nanping"
+   },
+   {
+    "name": "龙岩市",
+    "file": "longyan"
+   },
+   {
+    "name": "宁德市",
+    "file": "ningde"
+   }
+  ]
+ },
+ {
+  "province": "江西省",
+  "province_file": "jiangxi",
+  "cities": [
+   {
+    "name": "南昌市",
+    "file": "nanchang"
+   },
+   {
+    "name": "景德镇市",
+    "file": "jingdezhen"
+   },
+   {
+    "name": "萍乡市",
+    "file": "pingxiang"
+   },
+   {
+    "name": "九江市",
+    "file": "jiujiang"
+   },
+   {
+    "name": "新余市",
+    "file": "xinyu"
+   },
+   {
+    "name": "鹰潭市",
+    "file": "yingtan"
+   },
+   {
+    "name": "赣州市",
+    "file": "ganzhou"
+   },
+   {
+    "name": "吉安市",
+    "file": "jian"
+   },
+   {
+    "name": "宜春市",
+    "file": "yichun_jx"
+   },
+   {
+    "name": "抚州市",
+    "file": "fuzhou_jx"
+   },
+   {
+    "name": "上饶市",
+    "file": "shangrao"
+   }
+  ]
+ },
+ {
+  "province": "山东省",
+  "province_file": "shandong",
+  "cities": [
+   {
+    "name": "济南市",
+    "file": "jinan"
+   },
+   {
+    "name": "青岛市",
+    "file": "qingdao"
+   },
+   {
+    "name": "淄博市",
+    "file": "zibo"
+   },
+   {
+    "name": "枣庄市",
+    "file": "zaozhuang"
+   },
+   {
+    "name": "东营市",
+    "file": "dongying"
+   },
+   {
+    "name": "烟台市",
+    "file": "yantai"
+   },
+   {
+    "name": "潍坊市",
+    "file": "weifang"
+   },
+   {
+    "name": "济宁市",
+    "file": "jining"
+   },
+   {
+    "name": "威海市",
+    "file": "weihai"
+   },
+   {
+    "name": "日照市",
+    "file": "rizhao"
+   },
+   {
+    "name": "临沂市",
+    "file": "linyi"
+   },
+   {
+    "name": "德州市",
+    "file": "dezhou"
+   },
+   {
+    "name": "聊城市",
+    "file": "liaocheng"
+   },
+   {
+    "name": "滨州市",
+    "file": "binzhou"
+   },
+   {
+    "name": "菏泽市",
+    "file": "heze"
+   },
+   {
+    "name": "泰安市",
+    "file": "taian"
+   }
+  ]
+ },
+ {
+  "province": "河南省",
+  "province_file": "henan",
+  "cities": [
+   {
+    "name": "郑州市",
+    "file": "zhengzhou"
+   },
+   {
+    "name": "开封市",
+    "file": "kaifeng"
+   },
+   {
+    "name": "洛阳市",
+    "file": "luoyang"
+   },
+   {
+    "name": "平顶山市",
+    "file": "pingdingshan"
+   },
+   {
+    "name": "安阳市",
+    "file": "anyang"
+   },
+   {
+    "name": "鹤壁市",
+    "file": "hebi"
+   },
+   {
+    "name": "新乡市",
+    "file": "xinxiang"
+   },
+   {
+    "name": "焦作市",
+    "file": "jiaozuo"
+   },
+   {
+    "name": "濮阳市",
+    "file": "puyang"
+   },
+   {
+    "name": "许昌市",
+    "file": "xuchang"
+   },
+   {
+    "name": "漯河市",
+    "file": "luohe"
+   },
+   {
+    "name": "三门峡市",
+    "file": "sanmenxia"
+   },
+   {
+    "name": "南阳市",
+    "file": "nanyang"
+   },
+   {
+    "name": "商丘市",
+    "file": "shangqiu"
+   },
+   {
+    "name": "信阳市",
+    "file": "xinyang"
+   },
+   {
+    "name": "周口市",
+    "file": "zhoukou"
+   },
+   {
+    "name": "驻马店市",
+    "file": "zhumadian"
+   }
+  ]
+ },
+ {
+  "province": "湖北省",
+  "province_file": "hubei",
+  "cities": [
+   {
+    "name": "武汉市",
+    "file": "wuhan"
+   },
+   {
+    "name": "黄石市",
+    "file": "huangshi"
+   },
+   {
+    "name": "十堰市",
+    "file": "shiyan"
+   },
+   {
+    "name": "宜昌市",
+    "file": "yichang"
+   },
+   {
+    "name": "襄阳市",
+    "file": "xiangyang"
+   },
+   {
+    "name": "鄂州市",
+    "file": "ezhou"
+   },
+   {
+    "name": "荆门市",
+    "file": "jingmen"
+   },
+   {
+    "name": "孝感市",
+    "file": "xiaogan"
+   },
+   {
+    "name": "荆州市",
+    "file": "jingzhou"
+   },
+   {
+    "name": "黄冈市",
+    "file": "huanggang"
+   },
+   {
+    "name": "咸宁市",
+    "file": "xianning"
+   },
+   {
+    "name": "随州市",
+    "file": "suizhou"
+   }
+  ]
+ },
+ {
+  "province": "湖南省",
+  "province_file": "hunan",
+  "cities": [
+   {
+    "name": "长沙市",
+    "file": "changsha"
+   },
+   {
+    "name": "株洲市",
+    "file": "zhuzhou"
+   },
+   {
+    "name": "湘潭市",
+    "file": "xiangtan"
+   },
+   {
+    "name": "衡阳市",
+    "file": "hengyang"
+   },
+   {
+    "name": "邵阳市",
+    "file": "shaoyang"
+   },
+   {
+    "name": "岳阳市",
+    "file": "yueyang"
+   },
+   {
+    "name": "常德市",
+    "file": "changde"
+   },
+   {
+    "name": "张家界市",
+    "file": "zhangjiajie"
+   },
+   {
+    "name": "益阳市",
+    "file": "yiyang"
+   },
+   {
+    "name": "郴州市",
+    "file": "chenzhou"
+   },
+   {
+    "name": "永州市",
+    "file": "yongzhou"
+   },
+   {
+    "name": "怀化市",
+    "file": "huaihua"
+   },
+   {
+    "name": "娄底市",
+    "file": "loudi"
+   }
+  ]
+ },
+ {
+  "province": "广东省",
+  "province_file": "guangdong",
+  "cities": [
+   {
+    "name": "广州市",
+    "file": "guangzhou"
+   },
+   {
+    "name": "韶关市",
+    "file": "shaoguan"
+   },
+   {
+    "name": "深圳市",
+    "file": "shenzhen"
+   },
+   {
+    "name": "珠海市",
+    "file": "zhuhai"
+   },
+   {
+    "name": "汕头市",
+    "file": "shantou"
+   },
+   {
+    "name": "佛山市",
+    "file": "foshan"
+   },
+   {
+    "name": "江门市",
+    "file": "jiangmen"
+   },
+   {
+    "name": "湛江市",
+    "file": "zhanjiang"
+   },
+   {
+    "name": "茂名市",
+    "file": "maoming"
+   },
+   {
+    "name": "肇庆市",
+    "file": "zhaoqing"
+   },
+   {
+    "name": "惠州市",
+    "file": "huizhou"
+   },
+   {
+    "name": "梅州市",
+    "file": "meizhou"
+   },
+   {
+    "name": "汕尾市",
+    "file": "shanwei"
+   },
+   {
+    "name": "河源市",
+    "file": "heyuan"
+   },
+   {
+    "name": "阳江市",
+    "file": "yangjiang"
+   },
+   {
+    "name": "清远市",
+    "file": "qingyuan"
+   },
+   {
+    "name": "东莞市",
+    "file": "dongguan"
+   },
+   {
+    "name": "中山市",
+    "file": "zhongshan"
+   },
+   {
+    "name": "潮州市",
+    "file": "chaozhou"
+   },
+   {
+    "name": "揭阳市",
+    "file": "jieyang"
+   },
+   {
+    "name": "云浮市",
+    "file": "yunfu"
+   }
+  ]
+ },
+ {
+  "province": "广西壮族自治区",
+  "province_file": "guangxi",
+  "cities": [
+   {
+    "name": "南宁市",
+    "file": "nanning"
+   },
+   {
+    "name": "柳州市",
+    "file": "liuzhou"
+   },
+   {
+    "name": "桂林市",
+    "file": "guilin"
+   },
+   {
+    "name": "梧州市",
+    "file": "wuzhou"
+   },
+   {
+    "name": "北海市",
+    "file": "beihai"
+   },
+   {
+    "name": "防城港市",
+    "file": "fangchenggang"
+   },
+   {
+    "name": "钦州市",
+    "file": "qinzhou"
+   },
+   {
+    "name": "贵港市",
+    "file": "guigang"
+   },
+   {
+    "name": "玉林市",
+    "file": "yulin"
+   },
+   {
+    "name": "百色市",
+    "file": "baise"
+   },
+   {
+    "name": "贺州市",
+    "file": "hezhou"
+   },
+   {
+    "name": "河池市",
+    "file": "hechi"
+   },
+   {
+    "name": "来宾市",
+    "file": "laibin"
+   },
+   {
+    "name": "崇左市",
+    "file": "chongzuo"
+   }
+  ]
+ },
+ {
+  "province": "海南省",
+  "province_file": "hainan",
+  "cities": [
+   {
+    "name": "海口市",
+    "file": "haikou"
+   },
+   {
+    "name": "三亚市",
+    "file": "sanya"
+   },
+   {
+    "name": "儋州市",
+    "file": "danzhou"
+   },
+   {
+    "name": "三沙市",
+    "file": "sansha"
+   }
+  ]
+ },
+ {
+  "province": "四川省",
+  "province_file": "sichuan",
+  "cities": [
+   {
+    "name": "成都市",
+    "file": "chengdu"
+   },
+   {
+    "name": "自贡市",
+    "file": "zigong"
+   },
+   {
+    "name": "攀枝花市",
+    "file": "panzhihua"
+   },
+   {
+    "name": "泸州市",
+    "file": "luzhou"
+   },
+   {
+    "name": "德阳市",
+    "file": "deyang"
+   },
+   {
+    "name": "绵阳市",
+    "file": "mianyang"
+   },
+   {
+    "name": "广元市",
+    "file": "guangyuan"
+   },
+   {
+    "name": "遂宁市",
+    "file": "suining"
+   },
+   {
+    "name": "内江市",
+    "file": "neijiang"
+   },
+   {
+    "name": "乐山市",
+    "file": "leshan"
+   },
+   {
+    "name": "南充市",
+    "file": "nanchong"
+   },
+   {
+    "name": "眉山市",
+    "file": "meishan"
+   },
+   {
+    "name": "宜宾市",
+    "file": "yibin"
+   },
+   {
+    "name": "广安市",
+    "file": "guangan"
+   },
+   {
+    "name": "达州市",
+    "file": "dazhou"
+   },
+   {
+    "name": "雅安市",
+    "file": "yaan"
+   },
+   {
+    "name": "巴中市",
+    "file": "bazhong"
+   },
+   {
+    "name": "资阳市",
+    "file": "ziyang"
+   }
+  ]
+ },
+ {
+  "province": "贵州省",
+  "province_file": "guizhou",
+  "cities": [
+   {
+    "name": "贵阳市",
+    "file": "guiyang"
+   },
+   {
+    "name": "六盘水市",
+    "file": "liupanshui"
+   },
+   {
+    "name": "遵义市",
+    "file": "zunyi"
+   },
+   {
+    "name": "安顺市",
+    "file": "anshun"
+   },
+   {
+    "name": "毕节市",
+    "file": "bijie"
+   },
+   {
+    "name": "铜仁市",
+    "file": "tongren"
+   }
+  ]
+ },
+ {
+  "province": "云南省",
+  "province_file": "yunnan",
+  "cities": [
+   {
+    "name": "昆明市",
+    "file": "kunming"
+   },
+   {
+    "name": "曲靖市",
+    "file": "qujing"
+   },
+   {
+    "name": "玉溪市",
+    "file": "yuxi"
+   },
+   {
+    "name": "保山市",
+    "file": "baoshan"
+   },
+   {
+    "name": "昭通市",
+    "file": "zhaotong"
+   },
+   {
+    "name": "丽江市",
+    "file": "lijiang"
+   },
+   {
+    "name": "普洱市",
+    "file": "puer"
+   },
+   {
+    "name": "临沧市",
+    "file": "lincang"
+   }
+  ]
+ },
+ {
+  "province": "西藏自治区",
+  "province_file": "xizang",
+  "cities": [
+   {
+    "name": "拉萨市",
+    "file": "lasa"
+   },
+   {
+    "name": "日喀则市",
+    "file": "rikaze"
+   },
+   {
+    "name": "昌都市",
+    "file": "changdu"
+   },
+   {
+    "name": "林芝市",
+    "file": "linzhi"
+   },
+   {
+    "name": "山南市",
+    "file": "shannan"
+   },
+   {
+    "name": "那曲市",
+    "file": "naqu"
+   }
+  ]
+ },
+ {
+  "province": "陕西省",
+  "province_file": "shaanxi",
+  "cities": [
+   {
+    "name": "西安市",
+    "file": "xian"
+   },
+   {
+    "name": "铜川市",
+    "file": "tongchuan"
+   },
+   {
+    "name": "宝鸡市",
+    "file": "baoji"
+   },
+   {
+    "name": "咸阳市",
+    "file": "xianyang"
+   },
+   {
+    "name": "渭南市",
+    "file": "weinan"
+   },
+   {
+    "name": "延安市",
+    "file": "yanan"
+   },
+   {
+    "name": "汉中市",
+    "file": "hanzhong"
+   },
+   {
+    "name": "榆林市",
+    "file": "yulin_sx"
+   },
+   {
+    "name": "安康市",
+    "file": "ankang"
+   },
+   {
+    "name": "商洛市",
+    "file": "shangluo"
+   }
+  ]
+ },
+ {
+  "province": "甘肃省",
+  "province_file": "gansu",
+  "cities": [
+   {
+    "name": "兰州市",
+    "file": "lanzhou"
+   },
+   {
+    "name": "嘉峪关市",
+    "file": "jiayuguan"
+   },
+   {
+    "name": "金昌市",
+    "file": "jinchang"
+   },
+   {
+    "name": "白银市",
+    "file": "baiyin"
+   },
+   {
+    "name": "天水市",
+    "file": "tianshui"
+   },
+   {
+    "name": "武威市",
+    "file": "wuwei"
+   },
+   {
+    "name": "张掖市",
+    "file": "zhangye"
+   },
+   {
+    "name": "平凉市",
+    "file": "pingliang"
+   },
+   {
+    "name": "酒泉市",
+    "file": "jiuquan"
+   },
+   {
+    "name": "庆阳市",
+    "file": "qingyang"
+   },
+   {
+    "name": "定西市",
+    "file": "dingxi"
+   },
+   {
+    "name": "陇南市",
+    "file": "longnan"
+   }
+  ]
+ },
+ {
+  "province": "青海省",
+  "province_file": "qinghai",
+  "cities": [
+   {
+    "name": "西宁市",
+    "file": "xining"
+   },
+   {
+    "name": "海东市",
+    "file": "haidong"
+   }
+  ]
+ },
+ {
+  "province": "宁夏回族自治区",
+  "province_file": "ningxia",
+  "cities": [
+   {
+    "name": "银川市",
+    "file": "yinchuan"
+   },
+   {
+    "name": "石嘴山市",
+    "file": "shizuishan"
+   },
+   {
+    "name": "吴忠市",
+    "file": "wuzhong"
+   },
+   {
+    "name": "固原市",
+    "file": "guyuan"
+   },
+   {
+    "name": "中卫市",
+    "file": "zhongwei"
+   }
+  ]
+ },
+ {
+  "province": "新疆维吾尔自治区",
+  "province_file": "xinjiang",
+  "cities": [
+   {
+    "name": "乌鲁木齐市",
+    "file": "wulumuqi"
+   },
+   {
+    "name": "克拉玛依市",
+    "file": "karamay"
+   },
+   {
+    "name": "吐鲁番市",
+    "file": "turpan"
+   },
+   {
+    "name": "哈密市",
+    "file": "hami"
+   }
+  ]
+ },
+ {
+  "province": "北京市",
+  "province_file": "beijing",
+  "cities": [
+   {
+    "name": "北京市",
+    "file": "beijing"
+   }
+  ]
+ },
+ {
+  "province": "天津市",
+  "province_file": "tianjin",
+  "cities": [
+   {
+    "name": "天津市",
+    "file": "tianjin"
+   }
+  ]
+ },
+ {
+  "province": "上海市",
+  "province_file": "shanghai",
+  "cities": [
+   {
+    "name": "上海市",
+    "file": "shanghai"
+   }
+  ]
+ },
+ {
+  "province": "重庆市",
+  "province_file": "chongqing",
+  "cities": [
+   {
+    "name": "重庆市",
+    "file": "chongqing"
+   }
+  ]
+ }
+]

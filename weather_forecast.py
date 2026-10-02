@@ -11,14 +11,30 @@
 集成：每个模型用回测段算 MAE，按 1/MAE 倒数加权平均
 """
 
-import warnings, requests
+import warnings, requests, os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime, timedelta
+import argparse
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 warnings.filterwarnings("ignore")
+
+# 带退避重试的会话：20 城并行时防 Open-Meteo 429
+SESSION = requests.Session()
+SESSION.mount("https://", HTTPAdapter(max_retries=Retry(
+    total=3, backoff_factor=2.0,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET"],
+)))
+SESSION.mount("http://", HTTPAdapter(max_retries=Retry(
+    total=3, backoff_factor=2.0,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET"],
+)))
 plt.rcParams["font.sans-serif"] = [
     "WenQuanYi Zen Hei", "Microsoft YaHei", "PingFang SC",
     "Noto Sans CJK SC", "SimHei", "DejaVu Sans"
@@ -33,6 +49,23 @@ ANOMALY_WINDOW = 15           # ★ 近期异常订正窗口（缩短，更灵�
 NWP_BACKTEST_DAYS = 7
 RAIN_THRESHOLD = 1.0
 CITY_NAME = "扬州"
+
+# ===== 多城市：读 cities.csv（297 城，province/province_file/name/file/lat/lon）=====
+def load_cities():
+    import os
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cities.csv")
+    if not os.path.exists(path):
+        raise SystemExit("缺少 cities.csv：请将城市清单放到脚本同目录（由 gen_cities.py 生成）")
+    df = pd.read_csv(path, dtype=str)
+    return [{"name": r["name"], "file": r["file"],
+             "province": r["province"], "province_file": r["province_file"],
+             "lat": float(r["lat"]), "lon": float(r["lon"])}
+            for _, r in df.iterrows()]
+
+def load_city_list():
+    """返回 (CITIES, {file: city})"""
+    cities = load_cities()
+    return cities, {c["file"]: c for c in cities}
 
 NUMERIC_VARS = {
     "temperature_2m_max":          "最高温(°C)",
@@ -71,7 +104,7 @@ def fetch_history(years: int) -> pd.DataFrame:
     end = (datetime.now() - timedelta(days=2)).date()
     start = end - timedelta(days=365 * years)
     print(f"[1/7] 拉历史观测 {start} ~ {end} ...")
-    r = requests.get("https://archive-api.open-meteo.com/v1/archive", params={
+    r = SESSION.get("https://archive-api.open-meteo.com/v1/archive", params={
         "latitude": LAT, "longitude": LON,
         "start_date": start.isoformat(), "end_date": end.isoformat(),
         "daily": DAILY_FIELD, "timezone": "Asia/Shanghai",
@@ -88,7 +121,7 @@ def fetch_history(years: int) -> pd.DataFrame:
 
 def fetch_nwp(model_id: str) -> pd.DataFrame:
     """拉某个 NWP 模型对过去 NWP_BACKTEST_DAYS 天 + 未来 FORECAST_DAYS 天的预报。"""
-    r = requests.get("https://api.open-meteo.com/v1/forecast", params={
+    r = SESSION.get("https://api.open-meteo.com/v1/forecast", params={
         "latitude": LAT, "longitude": LON,
         "daily": ",".join(NWP_VARS),
         "models": model_id,
@@ -103,7 +136,7 @@ def fetch_nwp(model_id: str) -> pd.DataFrame:
 def fetch_hourly(hours: int = 48) -> pd.DataFrame:
     """拉未来 hours 小时逐小时预报（GFS/ECMWF 均值），供前端逐小时曲线。"""
     print(f"      拉逐小时预报（未来 {hours} 小时）...")
-    r = requests.get("https://api.open-meteo.com/v1/forecast", params={
+    r = SESSION.get("https://api.open-meteo.com/v1/forecast", params={
         "latitude": LAT, "longitude": LON,
         "hourly": "temperature_2m,apparent_temperature,precipitation_probability,"
                   "precipitation,weathercode,wind_speed_10m,relative_humidity_2m,cloud_cover",
@@ -129,7 +162,7 @@ def fetch_hourly(hours: int = 48) -> pd.DataFrame:
 def fetch_warnings(province_kw: str = "江苏", city_kw: str = "扬州") -> list:
     """从中央气象台拉全国预警，过滤出目标省份/城市。失败返回空列表（不影响主流程）。"""
     try:
-        r = requests.get("http://www.nmc.cn/rest/findAlarm", params={"type": "1"}, timeout=20,
+        r = SESSION.get("http://www.nmc.cn/rest/findAlarm", params={"type": "1"}, timeout=20,
                          headers={"User-Agent": "Mozilla/5.0"})
         r.raise_for_status()
         items = r.json()["data"]["page"]["list"]
@@ -322,6 +355,72 @@ def wind_dir_label(deg):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="自算天气预报（297 城）")
+    parser.add_argument("--city", help="只计算指定城市（file 或中文名，如 --city wuxi），默认全部")
+    parser.add_argument("--gen-cities-json", action="store_true",
+                        help="只生成 cities.json（纯标准库，供 finalize job / 前端使用）")
+    args = parser.parse_args()
+
+    if args.gen_cities_json:
+        write_cities_json_stdlib()
+        return
+
+    CITIES, _ = load_city_list()
+    cities = CITIES
+    if args.city:
+        cities = [c for c in CITIES if c["file"] == args.city or args.city in c["name"]]
+        if not cities:
+            print(f"未知城市: {args.city}")
+            return
+
+    for city in cities:
+        print("\n" + "=" * 64)
+        print(f"  开始计算：{city['name']}（{city['province']} · {city['lat']}, {city['lon']}）")
+        print("=" * 64)
+        try:
+            run_city(city)
+        except Exception as e:
+            print(f"  {city['name']} 计算失败: {e}")
+
+    if not args.city:
+        write_cities_json(CITIES)
+
+
+def write_cities_json_stdlib():
+    """纯标准库生成 cities.json（Actions finalize 用，无需 pandas）"""
+    import csv as _csv, json as _json
+    groups = {}
+    with open("cities.csv", encoding="utf-8-sig") as f:
+        for r in _csv.DictReader(f):
+            pf = r["province_file"]
+            groups.setdefault(pf, {"province": r["province"], "province_file": pf, "cities": []})
+            groups[pf]["cities"].append({"name": r["name"], "file": r["file"]})
+    with open("cities.json", "w", encoding="utf-8") as f:
+        _json.dump(list(groups.values()), f, ensure_ascii=False, indent=1)
+    total = sum(len(g["cities"]) for g in groups.values())
+    print(f"cities.json 已生成（{total} 城 / {len(groups)} 省）")
+
+
+def write_cities_json(CITIES):
+    """生成 cities.json 供前端动态构建城市列表（按省分组）"""
+    import json
+    by_prov = {}
+    for c in CITIES:
+        by_prov.setdefault(c["province_file"], {"province": c["province"], "cities": []})
+        by_prov[c["province_file"]]["cities"].append({"name": c["name"], "file": c["file"]})
+    with open("cities.json", "w", encoding="utf-8") as f:
+        json.dump([{"province": v["province"], "province_file": k, "cities": v["cities"]}
+                   for k, v in by_prov.items()], f, ensure_ascii=False, indent=1)
+    print(f"\n已生成 cities.json（{len(CITIES)} 城 / {len(by_prov)} 省）")
+
+
+def run_city(city: dict):
+    global LAT, LON, CITY_NAME
+    LAT, LON, CITY_NAME = city["lat"], city["lon"], city["name"]
+    file = city["file"]
+    outdir = os.path.join("data", city["province_file"])   # 按省份分类存储
+    os.makedirs(outdir, exist_ok=True)
+
     df = fetch_history(HISTORY_YEARS)
 
     print(f"[2/7] 拉 NWP 数值预报（GFS + ECMWF，回看{NWP_BACKTEST_DAYS}天 + 未来{FORECAST_DAYS}天）...")
@@ -336,22 +435,24 @@ def main():
     # 预报锚定今天：未来 N 天 = 今天 ~ 今天+N-1（而非从历史末+1）
     start_date = datetime.now().date()
 
-    # 逐小时预报（GFS/ECMWF 均值，48 小时）
+    # 逐小时预报（GFS/ECMWF 均值，72 小时）
     try:
-        hourly = fetch_hourly(48)
+        hourly = fetch_hourly(72)
         hourly["时间"] = hourly["时间"].dt.strftime("%Y-%m-%d %H:%M")   # 带年份，前端可锁定当前时段
-        hourly.to_csv("hourly_forecast.csv", index=False, encoding="utf-8-sig")
-        print(f"      已保存 hourly_forecast.csv（{len(hourly)} 小时）")
+        hourly.to_csv(os.path.join(outdir, f"{file}_hourly_forecast.csv"), index=False, encoding="utf-8-sig")
+        print(f"      已保存 {outdir}/{file}_hourly_forecast.csv（{len(hourly)} 小时）")
     except Exception as e:
         print(f"      逐小时拉取失败（忽略）: {e}")
 
     # 突发天气预警（中央气象台）
     try:
         import json
-        warnings = fetch_warnings(province_kw="江苏", city_kw="扬州")
-        with open("warning.json", "w", encoding="utf-8") as f:
+        prov_kw = city["province"].rstrip("省市自治区壮族回族维吾尔特别行政区")
+        city_kw = city["name"].rstrip("市")
+        warnings = fetch_warnings(province_kw=prov_kw, city_kw=city_kw)
+        with open(os.path.join(outdir, f"{file}_warning.json"), "w", encoding="utf-8") as f:
             json.dump(warnings, f, ensure_ascii=False, indent=2)
-        print(f"      已保存 warning.json（{len(warnings)} 条预警）")
+        print(f"      已保存 {outdir}/{file}_warning.json（{len(warnings)} 条预警）")
     except Exception as e:
         print(f"      预警保存失败（忽略）: {e}")
 
@@ -378,7 +479,7 @@ def main():
     print("\n".join(log))
     print("\n[5/7] 未来 7 天预报：")
     print(result.to_string(index=False))
-    result.to_csv("yangzhou_forecast.csv", index=False, encoding="utf-8-sig")
+    result.to_csv(os.path.join(outdir, f"{file}_forecast.csv"), index=False, encoding="utf-8-sig")
 
     print("[6/7] 画图 ...")
     recent60 = df[df["ds"] >= datetime.now() - timedelta(days=60)]
@@ -393,7 +494,7 @@ def main():
     ax.set_title(f"{CITY_NAME}未来{FORECAST_DAYS}天·气温预报(双NWP+集成)")
     ax.set_ylabel("°C"); ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
     ax.legend(); ax.grid(alpha=0.3)
-    plt.tight_layout(); plt.savefig("chart_temperature.png", dpi=130)
+    plt.tight_layout(); plt.savefig(os.path.join(outdir, f"chart_{file}_temperature.png"), dpi=130)
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 7))
     axes[0,0].bar(fd, result["降水量(mm)"], color="#1f77b4", alpha=0.7)
@@ -408,8 +509,8 @@ def main():
     for ax in axes.flat:
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
     fig.suptitle(f"{CITY_NAME}未来{FORECAST_DAYS}天·其他要素预报", fontsize=13)
-    plt.tight_layout(); plt.savefig("chart_others.png", dpi=130)
-    print("\n[7/7] 已保存：yangzhou_forecast.csv, hourly_forecast.csv, warning.json, chart_temperature.png, chart_others.png")
+    plt.tight_layout(); plt.savefig(os.path.join(outdir, f"chart_{file}_others.png"), dpi=130)
+    print(f"\n[7/7] 已保存：{outdir}/{file}_*.csv/json/png")
 
 
 if __name__ == "__main__":

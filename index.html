@@ -29,12 +29,16 @@
   .nav .icons{display:flex;gap:16px;font-size:20px}
   .nav .icons span{background:rgba(255,255,255,.2);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
   .nav .icons span:active{transform:scale(.92)}
+  .city-item{padding:14px 12px;border-radius:12px;font-size:15px;color:#1b2a4a;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+  .city-item:active{background:#eef1f6}
+  .city-item.active{background:#2f7fe6;color:#fff;font-weight:700}
 
   /* ===== 下拉提示 ===== */
   #pullHint{position:fixed;top:0;left:0;right:0;text-align:center;color:#5b6c88;font-size:13px;padding:14px 0 6px;transform:translateY(-30px);transition:.2s;z-index:9;pointer-events:none}
 
   /* ===== 离线标记 ===== */
   #offlineTag{display:none;margin:0 16px 10px;background:rgba(0,0,0,.45);color:#fff;padding:8px 14px;border-radius:12px;font-size:12px;text-align:center;backdrop-filter:blur(4px)}
+  #freshTag{display:none;margin:0 16px 10px;background:rgba(242,124,34,.9);color:#fff;padding:8px 14px;border-radius:12px;font-size:12px;text-align:center;backdrop-filter:blur(4px)}
 
   /* ===== 主实况 ===== */
   .main-weather{text-align:center;color:#fff;padding:8px 20px 22px}
@@ -58,6 +62,11 @@
   .daily-row .t .lo{color:var(--sub);margin-left:6px}
 
   .chart{width:100%;height:170px}
+
+  /* ===== 几点下雨胶囊 ===== */
+  .rain-pills{display:flex;flex-wrap:wrap;gap:8px;margin:2px 2px 10px}
+  .pill{background:rgba(66,121,185,.13);color:#2a5f9e;border:1px solid rgba(66,121,185,.32);
+        padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
 
   /* ===== 逐小时横向滚动 ===== */
   .hour-panel{padding-bottom:12px}
@@ -104,15 +113,25 @@
 
   <!-- 导航 -->
   <div class="nav">
-    <span class="loc">📍<span id="cityName">扬州</span></span>
+    <span class="loc">📍<span id="cityName" onclick="toggleCityPicker()" style="cursor:pointer">扬州</span> <span onclick="toggleCityPicker()" style="font-size:12px;opacity:.8">▾</span></span>
     <div class="icons">
       <span onclick="load(true)" title="刷新">⟳</span>
       <span onclick="toast('设置：温度单位/主题 暂未开放')" title="设置">⚙</span>
     </div>
   </div>
 
+  <!-- 城市选择弹层 -->
+  <div id="cityMask" onclick="closeCityPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;backdrop-filter:blur(2px)">
+    <div onclick="event.stopPropagation()" style="background:#fff;margin:26vh 40px auto;border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.25)">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;color:#1b2a4a">选择城市</div>
+      <div id="cityList"></div>
+    </div>
+  </div>
+
   <!-- 离线缓存标记 -->
   <div id="offlineTag"></div>
+  <!-- 数据滞后标记（打开自动检测） -->
+  <div id="freshTag"></div>
 
   <!-- 骨架屏（加载前显示） -->
   <div id="skeleton">
@@ -130,27 +149,49 @@
   </div>
 
   <div id="app" style="display:none"></div>
-  <footer>数据：Open-Meteo 观测 + GFS/ECMWF 集成 · 每日自动更新</footer>
+  <footer>数据：Open-Meteo 观测 + GFS/ECMWF 集成 · 每日 04:00 自动更新<br><span id="srcInfo" style="opacity:.8"></span></footer>
 </div>
 
 <script>
 // ================= 配置 =================
-const CSV_SOURCES = [
-  'https://raw.githubusercontent.com/sishangqu/self-weather-forecast/main/yangzhou_forecast.csv',
-  'https://cdn.jsdelivr.net/gh/sishangqu/self-weather-forecast@main/yangzhou_forecast.csv'
+// 城市列表：启动时从 cities.json 动态加载（297 城按省分组），切换自动记忆
+const FALLBACK_CITIES = [
+  {name:'扬州', file:'yangzhou',  province:'江苏省', province_file:'jiangsu'},
+  {name:'无锡', file:'wuxi',      province:'江苏省', province_file:'jiangsu'},
+  {name:'南京', file:'nanjing',   province:'江苏省', province_file:'jiangsu'},
+  {name:'上海', file:'shanghai',  province:'上海市', province_file:'shanghai'},
+  {name:'北京', file:'beijing',   province:'北京市', province_file:'beijing'}
 ];
-const HOURLY_SOURCES = [
-  'https://raw.githubusercontent.com/sishangqu/self-weather-forecast/main/hourly_forecast.csv',
-  'https://cdn.jsdelivr.net/gh/sishangqu/self-weather-forecast@main/hourly_forecast.csv'
+// 数据源池：所有城市共用，启动竞速自动选最快
+const SRC_POOL = [
+  {name:'GitHub',  tpl:u=>`https://raw.githubusercontent.com/sishangqu/self-weather-forecast/main/${u}`},
+  {name:'jsDelivr',tpl:u=>`https://cdn.jsdelivr.net/gh/sishangqu/self-weather-forecast@main/${u}`},
+  // ↓ 可选源：取消注释即参与竞速
+  // {name:'CF',  tpl:u=>`https://你的域名.pages.dev/${u}`},
+  // {name:'Gitee',tpl:u=>`https://gitee.com/你的名/self-weather-forecast/raw/main/${u}`},
 ];
+function makeDaily(city){  return SRC_POOL.map(s=>({name:s.name, url:s.tpl(`data/${city.province_file}/${city.file}_forecast.csv`)})); }
+function makeHourly(city){ return SRC_POOL.map(s=>({name:s.name, url:s.tpl(`data/${city.province_file}/${city.file}_hourly_forecast.csv`)})); }
+function makeCitiesSources(){ return SRC_POOL.map(s=>({name:s.name, url:s.tpl('cities.json')})); }
+const HOURLY_SHOW = 36;   // 只显示 36 小时（数据算 72h，全量存本地）
 const ECHARTS_CDNS = [
   'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
   'https://unpkg.com/echarts@5.4.3/dist/echarts.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js'
 ];
 const TIMEOUT_MS = 8000;
-const CACHE_KEY = 'wx_cache_v1';
-let charts=[], echartsReady=false;
+let charts=[], echartsReady=false, srcInfo='';
+let CITY_GROUPS=null;                       // cities.json 按省分组
+let curCity = null;
+function initCity(){
+  const saved = localStorage.getItem('wx_city');
+  const all = CITY_GROUPS
+    ? CITY_GROUPS.flatMap(g=>g.cities.map(c=>({...c, province:g.province, province_file:g.province_file})))
+    : FALLBACK_CITIES;
+  const hit = saved && all.find(c=>c.file===saved);
+  curCity = hit || all.find(c=>c.file==='yangzhou') || all[0];
+  try{ localStorage.setItem('wx_city', curCity.file); }catch(e){}
+}
 // ========================================
 
 const WEEK=['日','一','二','三','四','五','六'];
@@ -160,8 +201,9 @@ function skyTheme(p,c){
   if(c==null||c>=50) return ['#92b2d9','#e8eef6'];
   return ['#ffb745','#fdf1d8'];
 }
-function saveCache(rows,hourly){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(),rows,hourly:hourly||null})) }catch(e){} }
-function getCache(){ try{ const c=localStorage.getItem(CACHE_KEY); return c?JSON.parse(c):null }catch(e){ return null } }
+const cacheKey=()=>'wx_cache_'+curCity.file;   // 每个城市独立缓存
+function saveCache(rows,hourly){ try{ localStorage.setItem(cacheKey(), JSON.stringify({ts:Date.now(),rows,hourly:hourly||null})) }catch(e){} }
+function getCache(){ try{ const c=localStorage.getItem(cacheKey()); return c?JSON.parse(c):null }catch(e){ return null } }
 
 function loadEcharts(i){
   if(typeof echarts!=='undefined'){echartsReady=true;return Promise.resolve()}
@@ -170,17 +212,48 @@ function loadEcharts(i){
     s.onload=()=>{echartsReady=true;res()};s.onerror=()=>{s.remove();loadEcharts(i+1).then(res)};
     document.head.appendChild(s)});
 }
-async function fetchText(sources){
-  let lastErr;
-  for(const url of sources){try{
-    const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),TIMEOUT_MS);
-    const r=await fetch(url+'?t='+Date.now(),{signal:ctrl.signal});clearTimeout(t);
-    if(r.ok) return await r.text(); lastErr='HTTP '+r.status;
-  }catch(e){lastErr=e.name==='AbortError'?'超时':e.message}}
-  throw new Error(lastErr||'全部源失败');
+/** 多源竞速：全部并行拉，取最快成功者（自动选 GitHub / 镜像 / Cloudflare / 国内源） */
+async function fetchFastest(sources){
+  const jobs = sources.map(s=>{
+    const t0 = performance.now();
+    const ctrl = new AbortController(); const t=setTimeout(()=>ctrl.abort(),TIMEOUT_MS);
+    return fetch(s.url+'?t='+Date.now(), {signal:ctrl.signal})
+      .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+      .then(text=>{ clearTimeout(t); return {name:s.name, text, latency:Math.round(performance.now()-t0)}; })
+      .catch(e=>{ clearTimeout(t); throw new Error(s.name+':'+(e.name==='AbortError'?'超时':e.message)); });
+  });
+  const settled = await Promise.allSettled(jobs);
+  const ok = settled.filter(r=>r.status==='fulfilled').map(r=>r.value).sort((a,b)=>a.latency-b.latency);
+  if(!ok.length){ throw new Error(settled.map(r=>r.reason.message).join(' | ')); }
+  return ok[0];   // 最快成功源
 }
-const fetchCSV=()=>fetchText(CSV_SOURCES);
-const fetchHourly=()=>fetchText(HOURLY_SOURCES);
+/** 切换城市 */
+function switchCity(file){
+  const all = CITY_GROUPS
+    ? CITY_GROUPS.flatMap(g=>g.cities.map(c=>({...c, province:g.province, province_file:g.province_file})))
+    : FALLBACK_CITIES;
+  const c = all.find(x=>x.file===file);
+  if(!c || c.file===curCity.file) return;
+  curCity = c;
+  try{ localStorage.setItem('wx_city', c.file); }catch(e){}
+  closeCityPicker();
+  showSkeleton();
+  load(true);
+}
+/** 城市选择弹层：按省分组 */
+function toggleCityPicker(){
+  const m=document.getElementById('cityMask');
+  if(m.style.display==='block'){ closeCityPicker(); return; }
+  const list=document.getElementById('cityList');
+  const groups = CITY_GROUPS || [{province:'默认', province_file:'x', cities:FALLBACK_CITIES}];
+  list.innerHTML = groups.map(g=>`
+    <div style="font-size:12px;color:#5b6c88;font-weight:700;margin:10px 4px 4px">${g.province} · ${g.cities.length}城</div>
+    ${g.cities.map(c=>`<div class="city-item${c.file===curCity.file?' active':''}" onclick="switchCity('${c.file}')">${c.name}${c.file===curCity.file?' ✓':''}</div>`).join('')}
+  `).join('');
+  m.style.display='block';
+}
+function closeCityPicker(){ const m=document.getElementById('cityMask'); if(m) m.style.display='none'; }
+function showSkeleton(){ document.getElementById('skeleton').style.display='block'; document.getElementById('app').style.display='none'; }
 function parse(text){
   text=text.replace(/^\uFEFF/,'');
   const lines=text.trim().split('\n'); const head=lines[0].split(',');
@@ -212,28 +285,58 @@ function wIcon(w){
   if(w>=95)return '⛈️'; if(w>=80)return '🌧️'; if(w>=61)return '🌧️'; if(w>=51)return '🌦️';
   if(w>=71)return '🌨️'; if(w>=45)return '🌫️'; if(w===0)return '☀️'; if(w<=2)return '⛅'; return '☁️';
 }
-/** 锁定当前时段：从 >= 当前小时的第一条开始，取 24 条 */
-function lockCurrentHour(hourly){
+/** 锁定当前时段：从 >= 当前小时的第一条开始，取 HOURLY_SHOW(36) 条；全量 72h 已在缓存 */
+function lockCurrentHour(hourly, count){
+  count = count || HOURLY_SHOW;
   if(!hourly||!hourly.length) return [];
   const now=new Date(); now.setMinutes(0,0,0);
   let idx=hourly.findIndex(h=>h.time>=now);
   if(idx<0) idx=0;
-  return hourly.slice(idx, idx+24);
+  return hourly.slice(idx, idx+count);
+}
+
+/** 打开自动检测数据是否最新：首行日期 === 今天 */
+function isFresh(rows){
+  if(!rows||!rows.length) return true;
+  const d=new Date();
+  const today=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return rows[0].date === today;
+}
+const freshStr=()=>{const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+
+/** 几点下雨胶囊：扫描逐小时，降水概率>=50% 或降水量>0.1mm 的连续时段 */
+function rainPills(hourly){
+  if(!hourly||!hourly.length) return [];
+  const segs=[]; let cur=null;
+  const rainy=h=>(h.prob!=null&&h.prob>=50)||(h.rain!=null&&h.rain>=0.5);   // 概率≥50% 或降水≥0.5mm
+  hourly.forEach(h=>{
+    if(rainy(h)){ if(!cur) cur={start:h,end:h}; else cur.end=h; }
+    else if(cur){ segs.push(cur); cur=null; }
+  });
+  if(cur) segs.push(cur);
+  const today=new Date().getDate();
+  const fmt=t=>{const mm=t.getMonth()+1, dd=t.getDate(), hh=t.getHours();
+    return (dd===today?'今天':(mm+'/'+dd))+' '+hh+':00';};
+  return segs.slice(0,3).map(s=>{
+    const same = s.start.time.getTime()===s.end.time.getTime();
+    return same ? fmt(s.start.time) : fmt(s.start.time)+'–'+s.end.time.getHours()+':00';
+  });
 }
 
 async function load(showSpin){
+  document.getElementById('cityName').textContent = curCity.name;
   let rows=null, hourly=null, offline=false;
   try{
-    const [t1,t2]=await Promise.allSettled([fetchCSV(),fetchHourly()]);
+    const [t1,t2]=await Promise.allSettled([fetchFastest(makeDaily(curCity)),fetchFastest(makeHourly(curCity))]);
     if(t1.status!=='fulfilled') throw new Error(t1.reason&&t1.reason.message?t1.reason.message:'CSV 拉取失败');
-    rows=parse(t1.value);
+    rows=parse(t1.value.text); srcInfo = t1.value.name+' '+t1.value.latency+'ms';
     if(!rows.length) throw new Error('CSV 为空');
-    if(t2.status==='fulfilled'){ hourly=parseHourly(t2.value); if(!hourly.length) hourly=null; }
-    saveCache(rows,hourly);
+    if(t2.status==='fulfilled'){ hourly=parseHourly(t2.value.text); if(!hourly.length) hourly=null; }
+    saveCache(rows,hourly);          // 全量 72h 逐小时 + 7 天预报，本地存一份
   }catch(e){
     const c=getCache();
     if(c && c.rows && c.rows.length){
-      rows=c.rows; hourly=c.hourly||null; offline=true;           // 离线兜底：用缓存
+      rows=c.rows; hourly=c.hourly||null; offline=true; srcInfo='本地缓存';           // 离线兜底：用缓存
     }else{
       document.getElementById('skeleton').style.display='none';
       const app=document.getElementById('app'); app.style.display='block';
@@ -249,6 +352,7 @@ function render(rows, hourly, offline){
   const t=rows[0];
   document.getElementById('skeleton').style.display='none';
   const app=document.getElementById('app'); app.style.display='block';
+  const si=document.getElementById('srcInfo'); if(si) si.textContent='数据源：'+srcInfo;
 
   const [s1,s2]=skyTheme(t.prob,t.cloud);
   document.documentElement.style.setProperty('--sk1',s1);
@@ -260,6 +364,13 @@ function render(rows, hourly, offline){
     tag.textContent='⚠️ 离线模式 · 显示上次缓存数据（请联网下拉刷新）';
   } else tag.style.display='none';
 
+  // ==== 打开自动检测：数据是否最新 ====
+  const freshTag=document.getElementById('freshTag');
+  if(!offline && !isFresh(rows)){
+    freshTag.style.display='block';
+    freshTag.textContent='⏳ 数据更新于 '+rows[0].date+'（今天 '+freshStr()+'），Actions 可能还没跑，下拉可重试';
+  } else freshTag.style.display='none';
+
   let html=`<div class="main-weather">
     <div class="big-icon">${iconFor(t.prob,t.cloud)}</div>
     <div class="temp">${t.avg==null?'--':t.avg.toFixed(0)}<span class="unit">°C</span></div>
@@ -268,7 +379,7 @@ function render(rows, hourly, offline){
     <div class="meta">湿度 ${t.hum==null?'--':t.hum.toFixed(0)}% · 最大风 ${t.wind==null?'--':t.wind.toFixed(0)}km/h · 气压 ${t.pres==null?'--':t.pres.toFixed(0)}hPa</div>
   </div>`;
 
-  // ==== 逐小时预报：锁定当前时段（从 >= 当前小时的第一条开始，取 24 条） ====
+  // ==== 逐小时预报：锁定当前时段（从 >= 当前小时的第一条开始，显示 36h） ====
   const hourItems = lockCurrentHour(hourly);
   if(hourItems.length){
     const now=new Date(); const today=now.getDate();
@@ -282,8 +393,11 @@ function render(rows, hourly, offline){
         <div class="hrain">${h.prob!=null&&h.prob>=30?('☔'+h.prob+'%'):''}</div>
       </div>`;
     }).join('');
+    // ==== 几点下雨提示胶囊 ====
+    const pills = rainPills(hourItems);
     html+=`<div class="panel hour-panel">
       <div class="panel-title">逐小时 · 从当前时段起 ${hourItems.length}h</div>
+      ${pills.length?`<div class="rain-pills">${pills.map(p=>`<span class="pill">☔ ${p}</span>`).join('')}</div>`:''}
       <div class="hour-wrap"><div class="hour-list">${cards}</div></div>
     </div>`;
   }
@@ -346,7 +460,16 @@ window.refreshWeather = function(){ load(true); return 'ok'; };
     else ph.style.transform='translateY(-30px)'; ph.style.opacity=0; pulling=false; dist=0},{passive:true});
 })();
 
-window.onload=()=>load(true);
+window.onload=async ()=>{
+  // 先加载 cities.json（297 城清单），失败则用内置兜底城市
+  try{
+    const r=await fetchFastest(makeCitiesSources());
+    CITY_GROUPS=JSON.parse(r.text);
+    if(!Array.isArray(CITY_GROUPS)||!CITY_GROUPS.length) CITY_GROUPS=null;
+  }catch(e){ CITY_GROUPS=null; }
+  initCity();
+  load(true);
+};
 </script>
 </body>
 </html>
