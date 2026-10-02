@@ -11,35 +11,46 @@
 集成：每个模型用回测段算 MAE，按 1/MAE 倒数加权平均
 """
 
-import warnings, requests, os
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
+from __future__ import annotations   # 注解惰性求值：无 numpy/pandas 环境也能 import
+
+import warnings, os
 from datetime import datetime, timedelta
 import argparse
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+
+# 重依赖惰性加载：--gen-cities-json（finalize job，未装依赖）只走纯标准库路径；
+# 计算预报（forecast job，已 pip install）才会真正加载 numpy/pandas/matplotlib/requests。
+try:
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+    HAVE_HEAVY = True
+    plt.rcParams["font.sans-serif"] = [
+        "WenQuanYi Zen Hei", "Microsoft YaHei", "PingFang SC",
+        "Noto Sans CJK SC", "SimHei", "DejaVu Sans"
+    ]
+    plt.rcParams["axes.unicode_minus"] = False
+
+    # 带退避重试的会话：20 城并行时防 Open-Meteo 429
+    SESSION = requests.Session()
+    SESSION.mount("https://", HTTPAdapter(max_retries=Retry(
+        total=3, backoff_factor=2.0,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+    )))
+    SESSION.mount("http://", HTTPAdapter(max_retries=Retry(
+        total=3, backoff_factor=2.0,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+    )))
+except ImportError:
+    HAVE_HEAVY = False
+    np = pd = plt = mdates = requests = HTTPAdapter = Retry = SESSION = None
 
 warnings.filterwarnings("ignore")
-
-# 带退避重试的会话：20 城并行时防 Open-Meteo 429
-SESSION = requests.Session()
-SESSION.mount("https://", HTTPAdapter(max_retries=Retry(
-    total=3, backoff_factor=2.0,
-    status_forcelist=[429, 500, 502, 503, 504],
-    allowed_methods=["GET"],
-)))
-SESSION.mount("http://", HTTPAdapter(max_retries=Retry(
-    total=3, backoff_factor=2.0,
-    status_forcelist=[429, 500, 502, 503, 504],
-    allowed_methods=["GET"],
-)))
-plt.rcParams["font.sans-serif"] = [
-    "WenQuanYi Zen Hei", "Microsoft YaHei", "PingFang SC",
-    "Noto Sans CJK SC", "SimHei", "DejaVu Sans"
-]
-plt.rcParams["axes.unicode_minus"] = False
 
 LAT, LON = 32.39, 119.42
 HISTORY_YEARS = 10
@@ -517,3 +528,4 @@ def run_city(city: dict):
 
 if __name__ == "__main__":
     main()
+#（注：内容由AI生成）
