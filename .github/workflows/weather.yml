@@ -99,14 +99,20 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
-      # v4 下载后每个 artifact 一个目录：把所有 weather-*/data 合并到根 data/
+      # v4 下载后每个 artifact 一个 weather-* 目录；上传时 path: data/ 会去掉
+      # data/ 顶层（解压后直接是 省目录/），兼容两种结构合并到根 data/
       - name: Merge artifact data
         run: |
           mkdir -p data
           for d in weather-*/; do
-            if [ -d "$d/data" ]; then cp -r "$d/data/." data/; fi
+            if [ -d "$d/data" ]; then
+              cp -r "$d/data/." data/          # 结构 A: weather-0/data/jiangsu/
+            else
+              cp -r "$d/." data/               # 结构 B: weather-0/jiangsu/
+            fi
           done
-          echo "合并后 data 文件数: $(find data -type f | wc -l)"
+          echo "合并后 *_forecast.csv 数: $(find data -type f -name '*_forecast.csv' | wc -l)"
+          echo "合并后总文件数: $(find data -type f | wc -l)"
           rm -rf weather-*
 
       # 生成 cities.json（前端城市列表，纯标准库无需装依赖）
@@ -132,4 +138,3 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
         run: python .github/notify.py
-#（注：内容由AI生成）
