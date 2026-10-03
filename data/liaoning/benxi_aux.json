@@ -1,0 +1,45 @@
+{
+ "aqi": {
+  "value": 67.0,
+  "pm25": 12.4,
+  "pm10": 15.2
+ },
+ "uv": {
+  "today": 4.6,
+  "week": [
+   4.6,
+   4.7,
+   4.8,
+   4.7,
+   4.8,
+   4.8,
+   4.2
+  ]
+ },
+ "warnings": [
+  {
+   "title": "辽宁省营口市营口经济技术开发区气象台发布雷雨大风蓝色预警信号",
+   "time": "2026/10/03 22:20",
+   "url": "http://www.nmc.cn/publish/alarm/21080441600000_20261003221300.html",
+   "pic": "https://image.nmc.cn/assets/img/alarm/p0015004.png"
+  },
+  {
+   "title": "辽宁省营口市盖州市气象台发布雷雨大风蓝色预警信号",
+   "time": "2026/10/03 22:14",
+   "url": "http://www.nmc.cn/publish/alarm/21088141600000_20261003221300.html",
+   "pic": "https://image.nmc.cn/assets/img/alarm/p0015004.png"
+  },
+  {
+   "title": "辽宁省大连市气象台发布雷电黄色预警信号",
+   "time": "2026/10/03 22:07",
+   "url": "http://www.nmc.cn/publish/alarm/21020041600000_20261003220300.html",
+   "pic": "https://image.nmc.cn/assets/img/alarm/p0012003.png"
+  }
+ ],
+ "生活指数": {
+  "穿衣": "薄外套/夹克，早晚加衣",
+  "洗车": "不适宜（有雨）",
+  "运动": "适宜",
+  "感冒": "易发（温差大）"
+ }
+}

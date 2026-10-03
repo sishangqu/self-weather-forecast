@@ -1,0 +1,45 @@
+{
+ "aqi": {
+  "value": 34.0,
+  "pm25": 12.7,
+  "pm10": 13.0
+ },
+ "uv": {
+  "today": 1.8,
+  "week": [
+   1.8,
+   0.5,
+   5.8,
+   7.0,
+   7.0,
+   7.0,
+   2.4
+  ]
+ },
+ "warnings": [
+  {
+   "title": "贵州省毕节市大方县气象台发布大雾橙色预警信号",
+   "time": "2026/10/03 22:32",
+   "url": "http://www.nmc.cn/publish/alarm/52052141600000_20261003223247.html",
+   "pic": "https://image.nmc.cn/assets/img/alarm/p0005002.png"
+  },
+  {
+   "title": "贵州省铜仁市德江县气象台发布大风蓝色预警信号",
+   "time": "2026/10/03 22:32",
+   "url": "http://www.nmc.cn/publish/alarm/52062641600000_20261003223223.html",
+   "pic": "https://image.nmc.cn/assets/img/alarm/p0007004.png"
+  },
+  {
+   "title": "贵州省黔西南布依族苗族自治州望谟县气象台发布暴雨黄色预警信号",
+   "time": "2026/10/03 22:28",
+   "url": "http://www.nmc.cn/publish/alarm/52232641600000_20261003222837.html",
+   "pic": "https://image.nmc.cn/assets/img/alarm/p0002003.png"
+  }
+ ],
+ "生活指数": {
+  "穿衣": "薄外套/夹克",
+  "洗车": "不适宜（有雨）",
+  "运动": "不适宜（有雨）",
+  "感冒": "低发"
+ }
+}
