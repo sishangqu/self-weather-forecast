@@ -193,6 +193,89 @@ def fetch_warnings(province_kw: str = "江苏", city_kw: str = "扬州") -> list
         return []
 
 
+def aqi_level(v):
+    if v is None: return "—"
+    if v <= 50: return "优"
+    if v <= 100: return "良"
+    if v <= 150: return "轻度"
+    if v <= 200: return "中度"
+    if v <= 300: return "重度"
+    return "严重"
+
+
+def uv_level(v):
+    if v is None: return "—"
+    if v < 3: return "弱"
+    if v < 6: return "中等"
+    if v < 8: return "强"
+    if v < 11: return "很强"
+    return "极强"
+
+
+def fetch_aux(city: dict, warnings=None) -> dict:
+    """空气质量(AQI) + 紫外线(UV) + 预警 + 生活指数 → 写入 {file}_aux.json。
+    Open-Meteo Air Quality / forecast 均免费无需 key；单项失败不影响整体。"""
+    lat, lon = city["lat"], city["lon"]
+    aux = {"aqi": {"value": None, "pm25": None, "pm10": None},
+           "uv": {"today": None, "week": []},
+           "warnings": warnings or []}
+    try:
+        r = SESSION.get("https://air-quality-api.open-meteo.com/v1/air-quality", params={
+            "latitude": lat, "longitude": lon,
+            "current": "us_aqi,pm2_5,pm10",
+            "timezone": "Asia/Shanghai",
+        }, timeout=30)
+        r.raise_for_status()
+        cur = r.json()["current"]
+        v = cur.get("us_aqi")
+        aux["aqi"] = {"value": round(float(v), 1) if v is not None else None,
+                      "pm25": cur.get("pm2_5"), "pm10": cur.get("pm10")}
+    except Exception as e:
+        print(f"      AQI 拉取失败: {e}")
+    try:
+        r = SESSION.get("https://api.open-meteo.com/v1/forecast", params={
+            "latitude": lat, "longitude": lon,
+            "daily": "uv_index_max", "forecast_days": 7, "timezone": "Asia/Shanghai",
+        }, timeout=30)
+        r.raise_for_status()
+        uv = r.json()["daily"]["uv_index_max"]
+        aux["uv"] = {"today": round(float(uv[0]), 1) if uv and uv[0] is not None else None,
+                     "week": [round(float(x), 1) if x is not None else None for x in uv]}
+    except Exception as e:
+        print(f"      UV 拉取失败: {e}")
+    return aux
+
+
+def compute_life_index(result, hourly) -> dict:
+    """基于集成预报（今天行）+ 逐小时未来 48h 计算生活指数（穿衣/洗车/运动/感冒）。"""
+    r0 = result.iloc[0]
+    avg, hi, lo = float(r0["平均温(°C)"]), float(r0["最高温(°C)"]), float(r0["最低温(°C)"])
+    prob = float(str(r0["降水概率"]).rstrip("%"))
+    rain = float(r0["降水量(mm)"])
+    wind = float(r0["最大风速(km/h)"])
+    rainy48 = False
+    if hourly is not None and len(hourly):
+        h48 = hourly.head(48)
+        rainy48 = (float(h48["降水量(mm)"].fillna(0).sum()) >= 1.0
+                   or float(h48["降水概率(%)"].fillna(0).max()) >= 50)
+    if avg >= 26: dress = "短袖/薄衫"
+    elif avg >= 20: dress = "长袖/T恤"
+    elif avg >= 12: dress = "薄外套/夹克"
+    elif avg >= 4: dress = "厚外套/毛衣"
+    else: dress = "羽绒服/厚冬装"
+    if hi - lo >= 12: dress += "，早晚加衣"
+    if rainy48 or rain >= 1.0: car = "不适宜（有雨）"
+    elif wind >= 34: car = "风尘大，不适宜"
+    else: car = "适宜"
+    if prob >= 60 or rain >= 5.0: sport = "不适宜（有雨）"
+    elif avg < 0 or avg > 32: sport = "不适宜（过冷/过热）"
+    else: sport = "适宜"
+    if hi - lo >= 12 or avg <= 8: cold = "易发（温差大）"
+    elif hi - lo >= 8: cold = "较易发"
+    else: cold = "低发"
+    return {"穿衣": dress, "洗车": car, "运动": sport, "感冒": cold}
+
+
 # =============================================================
 # 2. 四个统计模型
 # =============================================================
@@ -494,6 +577,17 @@ def run_city(city: dict):
     print(result.to_string(index=False))
     result.to_csv(os.path.join(outdir, f"{file}_forecast.csv"), index=False, encoding="utf-8-sig")
 
+    # [5.5/7] 辅助数据：AQI + UV + 预警 + 生活指数 → aux.json（前端空气质量/紫外线/预警/生活指数）
+    try:
+        import json as _json
+        aux = fetch_aux(city, warnings)
+        aux["生活指数"] = compute_life_index(result, hourly)
+        with open(os.path.join(outdir, f"{file}_aux.json"), "w", encoding="utf-8") as f:
+            _json.dump(aux, f, ensure_ascii=False, indent=1)
+        print(f"      已保存 {outdir}/{file}_aux.json（AQI={aux['aqi']['value']} · UV={aux['uv']['today']} · 预警{len(aux['warnings'])}条 · 生活指数）")
+    except Exception as e:
+        print(f"      aux 保存失败（忽略）: {e}")
+
     print("[6/7] 画图 ...")
     recent60 = df[df["ds"] >= datetime.now() - timedelta(days=60)]
     fig, ax = plt.subplots(figsize=(11, 5.5))
@@ -528,4 +622,3 @@ def run_city(city: dict):
 
 if __name__ == "__main__":
     main()
-#（注：内容由AI生成）
