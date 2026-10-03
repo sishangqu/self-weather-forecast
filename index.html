@@ -62,6 +62,10 @@
   .fav-chip{display:inline-flex;width:auto;padding:10px 16px;margin:0;font-size:14px;border-radius:999px}
   .fav-row{display:flex;align-items:center;justify-content:space-between;padding:8px 2px;font-size:13px;color:var(--ink);border-bottom:1px solid var(--line)}
   .fav-row .set-btn{padding:5px 12px;font-size:12px}
+  /* ===== 预警横幅 ===== */
+  #warnBar{position:relative;z-index:5}
+  .warn-item{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#fff;padding:10px 16px;font-size:14px;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.35)}
+  .warn-item:active{opacity:.85}
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
@@ -229,10 +233,12 @@
   <div class="nav">
     <span class="loc">📍<span id="cityName" onclick="toggleCityPicker()" style="cursor:pointer">扬州</span> <span onclick="toggleCityPicker()" style="font-size:12px;opacity:.8">▾</span></span>
     <div class="icons">
-      <span onclick="load(true)" title="刷新">⟳</span>
       <span onclick="openSettings()" title="设置">⚙</span>
     </div>
   </div>
+
+  <!-- 气象预警横幅（有预警才显示） -->
+  <div id="warnBar" style="display:none"></div>
 
   <!-- 城市选择弹层：先省份 → 再城市 -->
   <div id="cityMask" onclick="closeCityPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;backdrop-filter:blur(2px)">
@@ -325,6 +331,7 @@ const SRC_POOL = [
 ];
 function makeDaily(city){  return SRC_POOL.map(s=>({name:s.name, url:s.tpl(`data/${city.province_file}/${city.file}_forecast.csv`)})); }
 function makeHourly(city){ return SRC_POOL.map(s=>({name:s.name, url:s.tpl(`data/${city.province_file}/${city.file}_hourly_forecast.csv`)})); }
+function makeAux(city){    return SRC_POOL.map(s=>({name:s.name, url:s.tpl(`data/${city.province_file}/${city.file}_aux.json`)})); }
 function makeCitiesSources(){ return SRC_POOL.map(s=>({name:s.name, url:s.tpl('cities.json')})); }
 const HOURLY_SHOW = 36;   // 只显示 36 小时（数据算 72h，全量存本地）
 const ECHARTS_CDNS = [
@@ -348,7 +355,16 @@ function initCity(){
 // ========================================
 
 const WEEK=['日','一','二','三','四','五','六'];
-function iconFor(p,c){ if(p>=50)return '🌧️'; if(p>=25)return '🌦️'; if(c==null)return '⛅'; if(c>=80)return '🌧️'; if(c>=50)return '☁️'; if(c>=20)return '⛅'; return '☀️'; }
+function iconFor(p,c){
+  if(p>=50) return '🌧️';
+  if(c==null) return p>=25?'🌦️':'⛅';
+  if(c>=80) return '🌧️';
+  if(c>=50) return '☁️';
+  if(c>=20) return p>=25?'🌤️':'⛅';
+  return p>=25?'🌦️':'☀️';
+}
+function aqiLevel(v){ if(v==null) return '—'; if(v<=50)return '优'; if(v<=100)return '良'; if(v<=150)return '轻度'; if(v<=200)return '中度'; if(v<=300)return '重度'; return '严重'; }
+function uvLevel(v){ if(v==null) return '—'; if(v<3)return '弱'; if(v<6)return '中等'; if(v<8)return '强'; if(v<11)return '很强'; return '极强'; }
 function skyTheme(p,c){
   if(p>=50) return ['#4279b9','#dde8f5'];
   if(c==null||c>=50) return ['#92b2d9','#e8eef6'];
@@ -357,6 +373,9 @@ function skyTheme(p,c){
 const cacheKey=()=>'wx_cache_'+curCity.file;   // 每个城市独立缓存
 function saveCache(rows,hourly){ try{ localStorage.setItem(cacheKey(), JSON.stringify({ts:Date.now(),rows,hourly:hourly||null})) }catch(e){} }
 function getCache(){ try{ const c=localStorage.getItem(cacheKey()); return c?JSON.parse(c):null }catch(e){ return null } }
+const auxKey=()=>'wx_aux_'+curCity.file;
+function saveAux(aux){ try{ localStorage.setItem(auxKey(), JSON.stringify(aux)) }catch(e){} }
+function getAux(){ try{ const c=localStorage.getItem(auxKey()); return c?JSON.parse(c):null }catch(e){ return null } }
 // 缓存里 Date 被 JSON 序列化成字符串，取出后还原
 function reviveHourly(hourly){ if(!hourly) return hourly; return hourly.map(h=>({...h, time:new Date(h.time)})); }
 
@@ -472,7 +491,7 @@ function paintFavs(){
   document.addEventListener('pointerdown',e=>{ if(e.pointerType==='touch') return; if(isHScroll(e.target)||inPicker()) return; pd=true; start(e.clientX,e.clientY); });
   document.addEventListener('pointerup',e=>{ if(!pd) return; pd=false; end(e.clientX,e.clientY); });
 })();
-function showSkeleton(){ document.getElementById('skeleton').style.display='block'; document.getElementById('app').style.display='none'; }
+function showSkeleton(){ document.getElementById('skeleton').style.display='block'; document.getElementById('app').style.display='none'; weatherFx(null); }
 function parse(text){
   text=text.replace(/^\uFEFF/,'');
   const lines=text.trim().split('\n'); const head=lines[0].split(',');
@@ -549,35 +568,38 @@ async function load(showSpin){
   let staleShown=false;
   if(cache0 && cache0.rows && cache0.rows.length){
     await loadEcharts(0);
-    render(cache0.rows, reviveHourly(cache0.hourly), false, true);
+    render(cache0.rows, reviveHourly(cache0.hourly), false, true, getAux());
     staleShown=true;
   }
-  let rows=null, hourly=null, offline=false, srcInfoTmp='';
+  let rows=null, hourly=null, aux=null, offline=false, srcInfoTmp='';
   try{
-    const [t1,t2]=await Promise.allSettled([fetchFastest(makeDaily(curCity)),fetchFastest(makeHourly(curCity))]);
+    const [t1,t2,t3]=await Promise.allSettled([fetchFastest(makeDaily(curCity)),fetchFastest(makeHourly(curCity)),fetchFastest(makeAux(curCity))]);
     if(t1.status!=='fulfilled') throw new Error(t1.reason&&t1.reason.message?t1.reason.message:'CSV 拉取失败');
     rows=parse(t1.value.text); srcInfoTmp = t1.value.name+' '+t1.value.latency+'ms';
     if(!rows.length) throw new Error('CSV 为空');
     if(t2.status==='fulfilled'){ hourly=parseHourly(t2.value.text); if(!hourly.length) hourly=null; }
+    if(t3.status==='fulfilled'){ try{ aux=JSON.parse(t3.value.text); }catch(e){ aux=null; } }
     saveCache(rows,hourly);          // 全量 72h 逐小时 + 7 天预报，本地存一份
+    if(aux) saveAux(aux);            // AQI/UV/预警/生活指数 也存一份
   }catch(e){
     if(staleShown) return;           // 已有缓存渲染，后台拉取失败就保持现状
     const c=getCache();
     if(c && c.rows && c.rows.length){
       rows=c.rows; hourly=reviveHourly(c.hourly); offline=true; srcInfoTmp='本地缓存';           // 离线兜底：用缓存
+      aux=getAux();
     }else{
       document.getElementById('skeleton').style.display='none';
       const app=document.getElementById('app'); app.style.display='block';
-      app.innerHTML=`<div class="error">⚠️ 网络不可用，且无缓存数据<br><br>请联网后下拉或点 ⟳ 刷新</div>`;
+      app.innerHTML=`<div class="error">⚠️ 网络不可用，且无缓存数据<br><br>请联网后下拉刷新</div>`;
       return;
     }
   }
   if(!staleShown) await loadEcharts(0);
   srcInfo = srcInfoTmp;
-  render(rows, hourly, offline, false);
+  render(rows, hourly, offline, false, aux);
 }
 
-function render(rows, hourly, offline, stale){
+function render(rows, hourly, offline, stale, aux){
   const t=rows[0];
   document.getElementById('skeleton').style.display='none';
   const app=document.getElementById('app'); app.style.display='block';
@@ -603,6 +625,15 @@ function render(rows, hourly, offline, stale){
     freshTag.style.display='block';
     freshTag.textContent='⏳ 数据更新于 '+rows[0].date+'（今天 '+freshStr()+'），Actions 可能还没跑，下拉可重试';
   } else freshTag.style.display='none';
+
+  // ==== 气象预警横幅（AQI/UV/预警/生活指数来自 aux.json） ====
+  const wb=document.getElementById('warnBar');
+  const warns=(aux && aux.warnings && aux.warnings.length) ? aux.warnings : [];
+  if(warns.length){
+    const color = /红/.test(warns[0].title)?'#e53935':/橙/.test(warns[0].title)?'#f27c22':/黄/.test(warns[0].title)?'#f2c029':/蓝/.test(warns[0].title)?'#348FEB':'#f27c22';
+    wb.style.display='block';
+    wb.innerHTML = warns.slice(0,2).map(w=>`<a class="warn-item" style="background:${color}" href="${w.url}" target="_blank" rel="noopener">⚠️ ${w.title}<small style="opacity:.85">${w.time||''}</small></a>`).join('');
+  } else wb.style.display='none';
 
   let html=`<div class="main-weather">
     <div class="big-icon">${iconFor(t.prob,t.cloud)}</div>
@@ -648,12 +679,21 @@ function render(rows, hourly, offline, stale){
     <div class="panel-title">实况指标</div>
     <div class="grid">
       ${gc('体感',fmtT(t.aavg),'°'+UNIT,`最高${fmtT(t.high)}° / 最低${fmtT(t.low)}°`)}
+      ${gc('空气质量', aux&&aux.aqi&&aux.aqi.value!=null?Math.round(aux.aqi.value):'--', aux&&aux.aqi?aqiLevel(aux.aqi.value):'', aux&&aux.aqi&&aux.aqi.pm25!=null?('PM2.5 '+Math.round(aux.aqi.pm25)):'')}
+      ${gc('紫外线', aux&&aux.uv&&aux.uv.today!=null?aux.uv.today:'--', aux&&aux.uv?uvLevel(aux.uv.today):'', aux&&aux.uv&&aux.uv.week&&aux.uv.week[1]!=null?('明日 '+aux.uv.week[1]):'')}
       ${gc('降水量',t.rain,'mm','今日累计')}
       ${gc('最大阵风',t.gust,'km/h','')}
       ${gc('云量',t.cloud,'%','')}
       ${gc('昼夜温差',t.dt,'°C','')}
       ${gc('降水概率',t.prob,'%',t.prob>=50?'注意带伞':'')}
     </div>
+    ${aux && aux['生活指数'] ? `<div class="panel-title">生活指数</div>
+    <div class="grid">
+      ${(()=>{const d=aux['生活指数']['穿衣']||'';const m=d.split('，')[0];const s=d.includes('，')?d.split('，').slice(1).join('，'):'';return gc('穿衣',m,'',s);})()}
+      ${gc('洗车',aux['生活指数']['洗车'],'','')}
+      ${gc('运动',aux['生活指数']['运动'],'','')}
+      ${gc('感冒',aux['生活指数']['感冒'],'','')}
+    </div>` : ''}
   </div>`;
 
   app.innerHTML=html;
@@ -700,7 +740,7 @@ function setGlass(g){ GLASS=g; try{ localStorage.setItem('wx_glass',g); }catch(e
 function setTheme(t){ THEME=t; try{ localStorage.setItem('wx_theme',t); }catch(e){} paintSetBtns(); applyTheme(); if(typeof charts!=='undefined' && charts.length) load(false); if(WFX) weatherFx(WFX.type); }
 function clearCache(){
   try{ const ks=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith('wx_cache_')) ks.push(k);} ks.forEach(k=>localStorage.removeItem(k)); }catch(e){}
-  toast('缓存已清除，下拉或点 ⟳ 刷新');
+  toast('缓存已清除，下拉即可刷新');
 }
 applyTheme();
 applyGlass();
@@ -712,7 +752,8 @@ function decideFx(t){
   if(!t) return null;
   const snow = (t.avg!=null && t.avg<=2 && t.prob>=40) || (t.high!=null && t.high<=4 && t.prob>=50);
   if(snow) return 'snow';
-  if(t.prob>=50 || (t.rain!=null && t.rain>=0.5)) return 'rain';
+  // 雨：强降水概率，或"降水+阴云"（避免晴天因微量降水误判下雨）
+  if(t.prob>=50 || (t.rain!=null && t.rain>=0.5 && t.cloud!=null && t.cloud>=60)) return 'rain';
   if(t.cloud!=null && t.cloud<=30 && t.prob<30 && t.avg!=null && t.avg>=26) return 'sun';
   return null;
 }
