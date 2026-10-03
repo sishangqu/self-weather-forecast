@@ -10,7 +10,19 @@
     --ink:#1b2a4a; --sub:#5b6c88; --line:#e6edf6;
     --blue:#2f7fe6; --red:#ff6b6b; --green:#26c281;
     --sk1:#8ec5f7; --sk2:#eef1f6;
+    --hover:#eef1f6; --hour-bg:#f3f7fd; --panel-soft:rgba(255,255,255,.5);
+    --pop-bg:#ffffff; --pop-title:#1b2a4a;
   }
+  /* 深色主题（设置可切换）——全局变量化 */
+  html[data-theme="dark"]{
+    --card:#1c2433; --ink:#e8edf7; --sub:#8fa1bd; --line:#2c3a52;
+    --sk1:#222c42; --sk2:#141a28;
+    --hover:#2a3550; --hour-bg:#262f42; --panel-soft:rgba(28,36,51,.6);
+    --pop-bg:#1c2433; --pop-title:#e8edf7;
+  }
+  html[data-theme="dark"] .city-item{color:var(--ink)}
+  html[data-theme="dark"] .hour-item.now{background:var(--blue);border-color:var(--blue)}
+  html[data-theme="dark"] .sk{background:linear-gradient(90deg,rgba(255,255,255,.08) 25%,rgba(255,255,255,.16) 37%,rgba(255,255,255,.08) 63%);background-size:400% 100%}
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
@@ -29,9 +41,13 @@
   .nav .icons{display:flex;gap:16px;font-size:20px}
   .nav .icons span{background:rgba(255,255,255,.2);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
   .nav .icons span:active{transform:scale(.92)}
-  .city-item{padding:14px 12px;border-radius:12px;font-size:15px;color:#1b2a4a;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-  .city-item:active{background:#eef1f6}
-  .city-item.active{background:#2f7fe6;color:#fff;font-weight:700}
+  .city-item{padding:14px 12px;border-radius:12px;font-size:15px;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:transform .15s,background .15s}
+  .city-item:hover{background:var(--hover);transform:translateY(-1px)}
+  .city-item:active{background:var(--hover)}
+  .city-item.active{background:var(--blue);color:#fff;font-weight:700}
+  .prov-item{padding:14px 12px;border-radius:12px;font-size:15px;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);margin-bottom:8px;transition:transform .15s,background .15s}
+  .prov-item:hover{background:var(--hover);transform:translateY(-1px)}
+  .prov-item.back{justify-content:flex-start;color:var(--blue);font-weight:600;border-style:dashed}
 
   /* ===== 下拉提示 ===== */
   #pullHint{position:fixed;top:0;left:0;right:0;text-align:center;color:#5b6c88;font-size:13px;padding:14px 0 6px;transform:translateY(-30px);transition:.2s;z-index:9;pointer-events:none}
@@ -67,13 +83,15 @@
   .rain-pills{display:flex;flex-wrap:wrap;gap:8px;margin:2px 2px 10px}
   .pill{background:rgba(66,121,185,.13);color:#2a5f9e;border:1px solid rgba(66,121,185,.32);
         padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+  html[data-theme="dark"] .pill{color:#7fb0e8;background:rgba(66,121,185,.22)}
 
   /* ===== 逐小时横向滚动 ===== */
   .hour-panel{padding-bottom:12px}
   .hour-wrap{overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
   .hour-wrap::-webkit-scrollbar{display:none}
   .hour-list{display:flex;gap:10px;min-width:max-content;padding:2px 2px 6px}
-  .hour-item{min-width:58px;text-align:center;padding:10px 6px;border-radius:14px;background:#f3f7fd;border:1px solid var(--line)}
+  .hour-item{min-width:58px;text-align:center;padding:10px 6px;border-radius:14px;background:var(--hour-bg);border:1px solid var(--line);transition:transform .15s}
+  .hour-item:hover{transform:translateY(-2px)}
   .hour-item .ht{font-size:11px;color:var(--sub);white-space:nowrap}
   .hour-item .hi{font-size:22px;margin:4px 0;line-height:1}
   .hour-item .htemp{font-size:15px;font-weight:700}
@@ -89,7 +107,23 @@
   .gcard .u{font-size:12px;color:var(--sub);font-weight:400;margin-left:2px}
   .panel-title{font-size:14px;font-weight:700;color:var(--sub);margin:4px 2px 10px}
 
-  footer{text-align:center;color:#9aa7bd;font-size:11px;line-height:1.7;padding:8px 20px 20px}
+  /* ===== 设置弹层 ===== */
+  .set-row{display:flex;align-items:center;justify-content:space-between;padding:12px 2px;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)}
+  .set-btn{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 14px;font-size:13px;color:var(--ink);cursor:pointer;transition:transform .15s}
+  .set-btn:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-1px)}
+  .set-btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+
+  /* ===== 高弹动画 ===== */
+  @keyframes popIn{from{transform:scale(.88) translateY(10px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  #cityMask>div,#setMask>div{animation:popIn .34s cubic-bezier(.2,1.4,.3,1)}
+  .main-weather{animation:fadeUp .45s cubic-bezier(.2,1.2,.3,1) both}
+  .hour-panel{animation:fadeUp .45s cubic-bezier(.2,1.2,.3,1) .05s both}
+  .panel{animation:fadeUp .45s cubic-bezier(.2,1.2,.3,1) .1s both}
+  .grid{animation:fadeUp .45s cubic-bezier(.2,1.2,.3,1) .15s both}
+  .rain-pills .pill{animation:popIn .3s cubic-bezier(.2,1.4,.3,1) both}
+
+  footer{text-align:center;color:var(--sub);font-size:11px;line-height:1.7;padding:8px 20px 20px}
   .error{text-align:center;padding:60px 20px;color:var(--sub)}
 
   /* ===== 骨架屏 ===== */
@@ -97,11 +131,22 @@
   .sk{background:linear-gradient(90deg,rgba(255,255,255,.45) 25%,rgba(255,255,255,.9) 37%,rgba(255,255,255,.45) 63%);
       background-size:400% 100%;animation:skload 1.4s ease infinite;border-radius:10px}
   @keyframes skload{0%{background-position:100% 50%}100%{background-position:0 50%}}
-  .sk-icon{width:80px;height:80px;border-radius:50%;margin:20px auto 16px}
+
+  /* 电脑端适配（宽屏自动放宽）—— 必须放在 .phone/.grid 定义之后才不会被覆盖 */
+  @media (min-width:768px){
+    .phone{max-width:980px}
+    .body-wrap{padding:0 24px 40px}
+    .grid{grid-template-columns:repeat(4,1fr)}
+    .main-weather{padding-top:24px}
+    .main-weather .big-icon{font-size:104px}
+    .main-weather .temp{font-size:104px}
+    footer{padding:14px 24px 30px}
+    #cityMask>div,#setMask>div{width:min(680px,92vw)}
+  }  .sk-icon{width:80px;height:80px;border-radius:50%;margin:20px auto 16px}
   .sk-temp{width:200px;height:64px;margin:0 auto;border-radius:14px}
   .sk-line{width:150px;height:14px;margin:10px auto 0;border-radius:7px}
   .sk-meta{width:220px;height:12px;margin:14px auto 0;border-radius:6px}
-  .sk-panel{background:rgba(255,255,255,.5);border-radius:20px;padding:10px 16px;margin-top:16px}
+  .sk-panel{background:var(--panel-soft);border-radius:20px;padding:10px 16px;margin-top:16px}
   .sk-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.6)}
   .sk-row:last-child{border-bottom:none}
   .sk-cell{height:16px;border-radius:8px}
@@ -116,15 +161,41 @@
     <span class="loc">📍<span id="cityName" onclick="toggleCityPicker()" style="cursor:pointer">扬州</span> <span onclick="toggleCityPicker()" style="font-size:12px;opacity:.8">▾</span></span>
     <div class="icons">
       <span onclick="load(true)" title="刷新">⟳</span>
-      <span onclick="toast('设置：温度单位/主题 暂未开放')" title="设置">⚙</span>
+      <span onclick="openSettings()" title="设置">⚙</span>
     </div>
   </div>
 
-  <!-- 城市选择弹层 -->
+  <!-- 城市选择弹层：先省份 → 再城市 -->
   <div id="cityMask" onclick="closeCityPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;backdrop-filter:blur(2px)">
-    <div onclick="event.stopPropagation()" style="background:#fff;margin:26vh 40px auto;border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.25)">
-      <div style="font-size:15px;font-weight:700;margin-bottom:12px;color:#1b2a4a">选择城市</div>
-      <div id="cityList"></div>
+    <div onclick="event.stopPropagation()" style="background:var(--pop-bg);margin:8vh auto;border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.25);width:min(92vw,560px);max-height:82vh;display:flex;flex-direction:column">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--pop-title)"><span id="pickerTitle">选择省份</span> · <span id="cityCount" style="font-weight:400;font-size:12px;color:var(--sub)"></span></div>
+      <div id="cityList" style="overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch"></div>
+    </div>
+  </div>
+
+  <!-- 设置弹层 -->
+  <div id="setMask" onclick="closeSettings()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;backdrop-filter:blur(2px)">
+    <div onclick="event.stopPropagation()" style="background:var(--pop-bg);margin:20vh auto;border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.25);width:min(92vw,420px)">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--pop-title)">设置</div>
+      <div class="set-row"><span>温度单位</span>
+        <span style="display:flex;gap:6px">
+          <button class="set-btn" data-u="C" onclick="setUnit('C')">℃</button>
+          <button class="set-btn" data-u="F" onclick="setUnit('F')">℉</button>
+        </span>
+      </div>
+      <div class="set-row"><span>主题</span>
+        <span style="display:flex;gap:6px">
+          <button class="set-btn" data-t="light" onclick="setTheme('light')">浅色</button>
+          <button class="set-btn" data-t="dark" onclick="setTheme('dark')">深色</button>
+          <button class="set-btn" data-t="auto" onclick="setTheme('auto')">跟随系统</button>
+        </span>
+      </div>
+      <div class="set-row"><span>本地缓存</span>
+        <button class="set-btn" onclick="clearCache()" style="color:#e74c3c">清除缓存</button>
+      </div>
+      <div style="text-align:center;margin-top:14px">
+        <button class="set-btn" onclick="closeSettings()" style="width:100%;background:#eef1f6">关闭</button>
+      </div>
     </div>
   </div>
 
@@ -162,13 +233,16 @@ const FALLBACK_CITIES = [
   {name:'上海', file:'shanghai',  province:'上海市', province_file:'shanghai'},
   {name:'北京', file:'beijing',   province:'北京市', province_file:'beijing'}
 ];
-// 数据源池：所有城市共用，启动竞速自动选最快
+// 数据源池：并行竞速自动选最快（Cloudflare Pages 自家数据优先，GitHub 兜底）
 const SRC_POOL = [
+  {name:'CF-Pages', tpl:u=>`https://b2-5xx.pages.dev/${u}`},
+  {name:'CF-Domain',tpl:u=>`https://yzzxb2.us.ci/${u}`},
+  {name:'jsDelivr', tpl:u=>`https://cdn.jsdelivr.net/gh/sishangqu/self-weather-forecast@main/${u}`},
   {name:'GitHub',  tpl:u=>`https://raw.githubusercontent.com/sishangqu/self-weather-forecast/main/${u}`},
-  {name:'jsDelivr',tpl:u=>`https://cdn.jsdelivr.net/gh/sishangqu/self-weather-forecast@main/${u}`},
-  // ↓ 可选源：取消注释即参与竞速
-  // {name:'CF',  tpl:u=>`https://你的域名.pages.dev/${u}`},
-  // {name:'Gitee',tpl:u=>`https://gitee.com/你的名/self-weather-forecast/raw/main/${u}`},
+  {name:'fastly',  tpl:u=>`https://fastly.jsdelivr.net/gh/sishangqu/self-weather-forecast@main/${u}`},
+  {name:'ghproxy', tpl:u=>`https://ghproxy.net/https://raw.githubusercontent.com/sishangqu/self-weather-forecast/main/${u}`},
+  // ↓ 可选源：取消注释即参与竞速（Gitee 需先在 gitee.com 镜像本仓库）
+  // {name:'Gitee',  tpl:u=>`https://gitee.com/qusishang/self-weather-forecast/raw/main/${u}`},
 ];
 function makeDaily(city){  return SRC_POOL.map(s=>({name:s.name, url:s.tpl(`data/${city.province_file}/${city.file}_forecast.csv`)})); }
 function makeHourly(city){ return SRC_POOL.map(s=>({name:s.name, url:s.tpl(`data/${city.province_file}/${city.file}_hourly_forecast.csv`)})); }
@@ -204,6 +278,8 @@ function skyTheme(p,c){
 const cacheKey=()=>'wx_cache_'+curCity.file;   // 每个城市独立缓存
 function saveCache(rows,hourly){ try{ localStorage.setItem(cacheKey(), JSON.stringify({ts:Date.now(),rows,hourly:hourly||null})) }catch(e){} }
 function getCache(){ try{ const c=localStorage.getItem(cacheKey()); return c?JSON.parse(c):null }catch(e){ return null } }
+// 缓存里 Date 被 JSON 序列化成字符串，取出后还原
+function reviveHourly(hourly){ if(!hourly) return hourly; return hourly.map(h=>({...h, time:new Date(h.time)})); }
 
 function loadEcharts(i){
   if(typeof echarts!=='undefined'){echartsReady=true;return Promise.resolve()}
@@ -240,18 +316,36 @@ function switchCity(file){
   showSkeleton();
   load(true);
 }
-/** 城市选择弹层：按省分组 */
+/** 城市选择弹层：先选省份 → 再选城市 */
+let pickerStep='province', pickerProvince=null;
 function toggleCityPicker(){
   const m=document.getElementById('cityMask');
   if(m.style.display==='block'){ closeCityPicker(); return; }
-  const list=document.getElementById('cityList');
-  const groups = CITY_GROUPS || [{province:'默认', province_file:'x', cities:FALLBACK_CITIES}];
-  list.innerHTML = groups.map(g=>`
-    <div style="font-size:12px;color:#5b6c88;font-weight:700;margin:10px 4px 4px">${g.province} · ${g.cities.length}城</div>
-    ${g.cities.map(c=>`<div class="city-item${c.file===curCity.file?' active':''}" onclick="switchCity('${c.file}')">${c.name}${c.file===curCity.file?' ✓':''}</div>`).join('')}
-  `).join('');
+  pickerStep='province'; pickerProvince=null;
+  renderPicker();
   m.style.display='block';
 }
+function renderPicker(){
+  const list=document.getElementById('cityList');
+  const groups = CITY_GROUPS || [{province:'默认', province_file:'x', cities:FALLBACK_CITIES}];
+  if(pickerStep==='province'){
+    const total=groups.reduce((n,g)=>n+g.cities.length,0);
+    document.getElementById('pickerTitle').textContent='选择省份';
+    document.getElementById('cityCount').textContent=groups.length+' 省 · 共 '+total+' 城';
+    list.innerHTML = groups.map(g=>`
+      <div class="prov-item" onclick="pickProvince('${g.province_file}')">
+        <span>${g.province}</span><span style="font-size:12px;color:var(--sub)">${g.cities.length} 城 ›</span>
+      </div>`).join('');
+  }else{
+    const g=groups.find(x=>x.province_file===pickerProvince);
+    if(!g) return;
+    document.getElementById('pickerTitle').textContent='选择城市';
+    document.getElementById('cityCount').textContent=g.province+' · '+g.cities.length+' 城';
+    list.innerHTML = `<div class="prov-item back" onclick="pickerStep='province';renderPicker()">‹ 返回省份列表</div>` +
+      g.cities.map(c=>`<div class="city-item${c.file===curCity.file?' active':''}" onclick="switchCity('${c.file}')">${c.name}${c.file===curCity.file?' ✓':''}</div>`).join('');
+  }
+}
+function pickProvince(pf){ pickerStep='city'; pickerProvince=pf; renderPicker(); }
 function closeCityPicker(){ const m=document.getElementById('cityMask'); if(m) m.style.display='none'; }
 function showSkeleton(){ document.getElementById('skeleton').style.display='block'; document.getElementById('app').style.display='none'; }
 function parse(text){
@@ -325,18 +419,27 @@ function rainPills(hourly){
 
 async function load(showSpin){
   document.getElementById('cityName').textContent = curCity.name;
-  let rows=null, hourly=null, offline=false;
+  // SWR：先秒显本地缓存，同时后台拉最新数据，回来再替换
+  const cache0 = getCache();
+  let staleShown=false;
+  if(cache0 && cache0.rows && cache0.rows.length){
+    await loadEcharts(0);
+    render(cache0.rows, reviveHourly(cache0.hourly), false, true);
+    staleShown=true;
+  }
+  let rows=null, hourly=null, offline=false, srcInfoTmp='';
   try{
     const [t1,t2]=await Promise.allSettled([fetchFastest(makeDaily(curCity)),fetchFastest(makeHourly(curCity))]);
     if(t1.status!=='fulfilled') throw new Error(t1.reason&&t1.reason.message?t1.reason.message:'CSV 拉取失败');
-    rows=parse(t1.value.text); srcInfo = t1.value.name+' '+t1.value.latency+'ms';
+    rows=parse(t1.value.text); srcInfoTmp = t1.value.name+' '+t1.value.latency+'ms';
     if(!rows.length) throw new Error('CSV 为空');
     if(t2.status==='fulfilled'){ hourly=parseHourly(t2.value.text); if(!hourly.length) hourly=null; }
     saveCache(rows,hourly);          // 全量 72h 逐小时 + 7 天预报，本地存一份
   }catch(e){
+    if(staleShown) return;           // 已有缓存渲染，后台拉取失败就保持现状
     const c=getCache();
     if(c && c.rows && c.rows.length){
-      rows=c.rows; hourly=c.hourly||null; offline=true; srcInfo='本地缓存';           // 离线兜底：用缓存
+      rows=c.rows; hourly=reviveHourly(c.hourly); offline=true; srcInfoTmp='本地缓存';           // 离线兜底：用缓存
     }else{
       document.getElementById('skeleton').style.display='none';
       const app=document.getElementById('app'); app.style.display='block';
@@ -344,19 +447,22 @@ async function load(showSpin){
       return;
     }
   }
-  await loadEcharts(0);
-  render(rows, hourly, offline);
+  if(!staleShown) await loadEcharts(0);
+  srcInfo = srcInfoTmp;
+  render(rows, hourly, offline, false);
 }
 
-function render(rows, hourly, offline){
+function render(rows, hourly, offline, stale){
   const t=rows[0];
   document.getElementById('skeleton').style.display='none';
   const app=document.getElementById('app'); app.style.display='block';
-  const si=document.getElementById('srcInfo'); if(si) si.textContent='数据源：'+srcInfo;
+  const si=document.getElementById('srcInfo'); if(si) si.textContent = stale ? '📦 本地缓存 · 后台更新中…' : '数据源：'+srcInfo;
 
   const [s1,s2]=skyTheme(t.prob,t.cloud);
-  document.documentElement.style.setProperty('--sk1',s1);
-  document.documentElement.style.setProperty('--sk2',s2);
+  const _dark=document.documentElement.getAttribute('data-theme')==='dark';
+  // 深色主题下固定深蓝渐变（避免天气动态色覆盖深色变量）
+  document.documentElement.style.setProperty('--sk1', _dark ? '#222c42' : s1);
+  document.documentElement.style.setProperty('--sk2', _dark ? '#141a28' : s2);
 
   const tag=document.getElementById('offlineTag');
   if(offline){
@@ -364,18 +470,18 @@ function render(rows, hourly, offline){
     tag.textContent='⚠️ 离线模式 · 显示上次缓存数据（请联网下拉刷新）';
   } else tag.style.display='none';
 
-  // ==== 打开自动检测：数据是否最新 ====
+  // ==== 打开自动检测：数据是否最新（SWR 缓存渲染时不提示，等新数据回来再判断） ====
   const freshTag=document.getElementById('freshTag');
-  if(!offline && !isFresh(rows)){
+  if(!offline && !stale && !isFresh(rows)){
     freshTag.style.display='block';
     freshTag.textContent='⏳ 数据更新于 '+rows[0].date+'（今天 '+freshStr()+'），Actions 可能还没跑，下拉可重试';
   } else freshTag.style.display='none';
 
   let html=`<div class="main-weather">
     <div class="big-icon">${iconFor(t.prob,t.cloud)}</div>
-    <div class="temp">${t.avg==null?'--':t.avg.toFixed(0)}<span class="unit">°C</span></div>
+    <div class="temp">${fmtT(t.avg)}<span class="unit">°${UNIT}</span></div>
     <div class="cond">${t.dir||'—'}风 · ${t.prob>=50?'有降水':t.cloud>=80?'阴':t.cloud>=50?'多云':'晴'}</div>
-    <div class="feels">体感 ${t.aavg==null?'--':t.aavg.toFixed(0)}°C</div>
+    <div class="feels">体感 ${fmtT(t.aavg)}°${UNIT}</div>
     <div class="meta">湿度 ${t.hum==null?'--':t.hum.toFixed(0)}% · 最大风 ${t.wind==null?'--':t.wind.toFixed(0)}km/h · 气压 ${t.pres==null?'--':t.pres.toFixed(0)}hPa</div>
   </div>`;
 
@@ -389,7 +495,7 @@ function render(rows, hourly, offline){
       return `<div class="hour-item${isNow?' now':''}">
         <div class="ht">${label}</div>
         <div class="hi">${wIcon(h.wcode)}</div>
-        <div class="htemp">${h.temp==null?'--':h.temp.toFixed(0)}°</div>
+        <div class="htemp">${fmtT(h.temp)}°</div>
         <div class="hrain">${h.prob!=null&&h.prob>=30?('☔'+h.prob+'%'):''}</div>
       </div>`;
     }).join('');
@@ -407,14 +513,14 @@ function render(rows, hourly, offline){
       <div class="d">周${WEEK[d.getDay()]}<small>${r.date.slice(5)}</small></div>
       <div class="ic">${iconFor(r.prob,r.cloud)}</div>
       <div class="rain-tag">${r.prob!=null&&r.prob>=25?('☔'+r.prob+'%'):''}</div>
-      <div class="t"><span class="hi">${r.high==null?'--':r.high.toFixed(0)}°</span><span class="lo">${r.low==null?'--':r.low.toFixed(0)}°</span></div>
+      <div class="t"><span class="hi">${fmtT(r.high)}°</span><span class="lo">${fmtT(r.low)}°</span></div>
     </div>`}).join('');
   html+=`<div class="body-wrap">
     <div class="panel"><div class="panel-title">未来 ${rows.length} 天预报</div>${days}
       <div id="chartT" class="chart"></div></div>
     <div class="panel-title">实况指标</div>
     <div class="grid">
-      ${gc('体感',t.aavg,'°C',`最高${t.high==null?'--':t.high.toFixed(0)}° / 最低${t.low==null?'--':t.low.toFixed(0)}°`)}
+      ${gc('体感',fmtT(t.aavg),'°'+UNIT,`最高${fmtT(t.high)}° / 最低${fmtT(t.low)}°`)}
       ${gc('降水量',t.rain,'mm','今日累计')}
       ${gc('最大阵风',t.gust,'km/h','')}
       ${gc('云量',t.cloud,'%','')}
@@ -429,17 +535,42 @@ function render(rows, hourly, offline){
     const el=document.getElementById('chartT'); if(!el) return;
     const c=echarts.init(el); charts.push(c);
     const x=rows.map(r=>r.date.slice(5));
-    c.setOption({tooltip:{trigger:'axis'},legend:{data:['最高','平均','最低'],top:0,itemWidth:12,itemHeight:8,textStyle:{fontSize:10}},
-      grid:{left:36,right:10,top:26,bottom:20},xAxis:{type:'category',data:x,boundaryGap:false,axisLabel:{fontSize:9}},
-      yAxis:{type:'value',name:'°C',nameTextStyle:{fontSize:9},axisLabel:{fontSize:9}},series:[
-      {name:'最高',type:'line',data:rows.map(r=>r.high),smooth:true,lineStyle:{width:2,color:'#ff9f43'},itemStyle:{color:'#ff9f43'},symbolSize:5},
-      {name:'平均',type:'line',data:rows.map(r=>r.avg),smooth:true,lineStyle:{width:2.5,color:'#ff6b6b'},itemStyle:{color:'#ff6b6b'},symbolSize:5},
-      {name:'最低',type:'line',data:rows.map(r=>r.low),smooth:true,lineStyle:{width:2,color:'#2f7fe6'},itemStyle:{color:'#2f7fe6'},symbolSize:5}]});
+    const cv=UNIT==='F'?v=>v==null?null:Math.round(v*9/5+32):v=>v;
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    const axisC=dark?'#8fa1bd':'#5b6c88';
+    c.setOption({tooltip:{trigger:'axis',backgroundColor:dark?'#232e44':'#fff',borderColor:'rgba(0,0,0,.1)',textStyle:{color:dark?'#e8edf7':'#1b2a4a'}},legend:{data:['最高','平均','最低'],top:0,itemWidth:12,itemHeight:8,textStyle:{fontSize:10,color:axisC}},
+      grid:{left:36,right:10,top:26,bottom:20},xAxis:{type:'category',data:x,boundaryGap:false,axisLabel:{fontSize:9,color:axisC},axisLine:{lineStyle:{color:axisC}}},
+      yAxis:{type:'value',name:'°'+UNIT,nameTextStyle:{fontSize:9,color:axisC},axisLabel:{fontSize:9,color:axisC},splitLine:{lineStyle:{color:dark?'#2c3a52':'#e6edf6'}}},series:[
+      {name:'最高',type:'line',data:rows.map(r=>cv(r.high)),smooth:true,lineStyle:{width:2,color:'#ff9f43'},itemStyle:{color:'#ff9f43'},symbolSize:5},
+      {name:'平均',type:'line',data:rows.map(r=>cv(r.avg)),smooth:true,lineStyle:{width:2.5,color:'#ff6b6b'},itemStyle:{color:'#ff6b6b'},symbolSize:5},
+      {name:'最低',type:'line',data:rows.map(r=>cv(r.low)),smooth:true,lineStyle:{width:2,color:'#2f7fe6'},itemStyle:{color:'#2f7fe6'},symbolSize:5}]});
   } else {
     const el=document.getElementById('chartT'); if(el) el.style.display='none';
   }
 }
-function gc(l,v,u,s){return `<div class="gcard"><div class="l">${l}</div><div class="v">${v==null?'--':(Number.isInteger(v)?v:v.toFixed(1))}<span class="u">${u}</span></div><div style="font-size:11px;color:#5b6c88;margin-top:3px">${s||''}</div></div>`}
+function gc(l,v,u,s){return `<div class="gcard"><div class="l">${l}</div><div class="v">${v==null?'--':(typeof v==='string'?v:(Number.isInteger(v)?v:v.toFixed(1)))}<span class="u">${u}</span></div><div style="font-size:11px;color:#5b6c88;margin-top:3px">${s||''}</div></div>`}
+
+// ================= 设置：温度单位 / 主题 / 缓存 =================
+let UNIT='C'; try{ UNIT=localStorage.getItem('wx_unit')||'C'; }catch(e){}
+let THEME='auto'; try{ THEME=localStorage.getItem('wx_theme')||'auto'; }catch(e){}
+const fmtT=v=>{ if(v==null) return '--'; return UNIT==='F' ? String(Math.round(v*9/5+32)) : String(Math.round(v)); };
+function applyTheme(){
+  const t = THEME==='auto' ? (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light') : THEME;
+  document.documentElement.setAttribute('data-theme', t);
+}
+function paintSetBtns(){
+  document.querySelectorAll('#setMask .set-btn[data-u]').forEach(b=>b.classList.toggle('on', b.dataset.u===UNIT));
+  document.querySelectorAll('#setMask .set-btn[data-t]').forEach(b=>b.classList.toggle('on', b.dataset.t===THEME));
+}
+function openSettings(){ paintSetBtns(); document.getElementById('setMask').style.display='block'; }
+function closeSettings(){ document.getElementById('setMask').style.display='none'; }
+function setUnit(u){ UNIT=u; try{ localStorage.setItem('wx_unit',u); }catch(e){} paintSetBtns(); if(document.getElementById('app').style.display!=='none') load(false); }
+function setTheme(t){ THEME=t; try{ localStorage.setItem('wx_theme',t); }catch(e){} paintSetBtns(); applyTheme(); if(typeof charts!=='undefined' && charts.length) load(false); }
+function clearCache(){
+  try{ const ks=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith('wx_cache_')) ks.push(k);} ks.forEach(k=>localStorage.removeItem(k)); }catch(e){}
+  toast('缓存已清除，下拉或点 ⟳ 刷新');
+}
+applyTheme();
 
 let toastTimer;
 function toast(msg){let el=document.getElementById('toast'); if(!el){el=document.createElement('div');el.id='toast';
