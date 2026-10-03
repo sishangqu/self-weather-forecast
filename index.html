@@ -23,6 +23,45 @@
   html[data-theme="dark"] .city-item{color:var(--ink)}
   html[data-theme="dark"] .hour-item.now{background:var(--blue);border-color:var(--blue)}
   html[data-theme="dark"] .sk{background:linear-gradient(90deg,rgba(255,255,255,.08) 25%,rgba(255,255,255,.16) 37%,rgba(255,255,255,.08) 63%);background-size:400% 100%}
+
+  /* ===== 外观：毛玻璃 / 液态玻璃（设置可切换）===== */
+  html[data-glass="liquid"] .panel,html[data-glass="liquid"] .gcard,
+  html[data-glass="liquid"] #cityMask>div,html[data-glass="liquid"] #setMask>div{
+    background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(255,255,255,.32));
+    backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);
+    border:1px solid rgba(255,255,255,.55);border-radius:24px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(255,255,255,.15),0 10px 34px rgba(31,67,120,.12);
+  }
+  html[data-glass="liquid"] .gcard{border-radius:22px}
+  html[data-glass="liquid"] .nav{
+    background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.04));
+    backdrop-filter:blur(18px);border-radius:0 0 22px 22px;
+  }
+  html[data-glass="liquid"] .hour-item{background:rgba(255,255,255,.55);backdrop-filter:blur(10px);border-radius:16px}
+  html[data-glass="liquid"] .set-btn{background:rgba(255,255,255,.7);border-radius:12px}
+  html[data-glass="liquid"] .rain-pills .pill{background:rgba(255,255,255,.4);border-color:rgba(255,255,255,.6)}
+  /* 液态玻璃下的字体颜色：显式跟随主题变量，保证半透明底上的可读性 */
+  html[data-glass="liquid"] .panel,html[data-glass="liquid"] .gcard,
+  html[data-glass="liquid"] .hour-item,html[data-glass="liquid"] .panel-title,
+  html[data-glass="liquid"] .gcard .v,html[data-glass="liquid"] .gcard .k,
+  html[data-glass="liquid"] .fav-row,html[data-glass="liquid"] .daily-row,
+  html[data-glass="liquid"] #cityMask>div,html[data-glass="liquid"] #setMask>div,
+  html[data-glass="liquid"] #setMask .set-row{color:var(--ink)}
+  html[data-glass="liquid"] .gcard .sub,html[data-glass="liquid"] .hour-item .prob,
+  html[data-glass="liquid"] #cityCount{color:var(--sub)}
+  html[data-theme="dark"][data-glass="liquid"] .panel,html[data-theme="dark"][data-glass="liquid"] .gcard,
+  html[data-theme="dark"][data-glass="liquid"] #cityMask>div,html[data-theme="dark"][data-glass="liquid"] #setMask>div{
+    background:linear-gradient(145deg,rgba(42,54,74,.75),rgba(24,32,46,.5));border-color:rgba(255,255,255,.16);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 10px 34px rgba(0,0,0,.35);
+  }
+  html[data-theme="dark"][data-glass="liquid"] .hour-item{background:rgba(38,47,66,.55)}
+  html[data-theme="dark"][data-glass="liquid"] .set-btn{background:rgba(28,36,51,.6)}
+  html[data-theme="dark"][data-glass="liquid"] .rain-pills .pill{background:rgba(28,36,51,.65);border-color:rgba(255,255,255,.22)}
+
+  /* ===== 常用城市 ===== */
+  .fav-chip{display:inline-flex;width:auto;padding:10px 16px;margin:0;font-size:14px;border-radius:999px}
+  .fav-row{display:flex;align-items:center;justify-content:space-between;padding:8px 2px;font-size:13px;color:var(--ink);border-bottom:1px solid var(--line)}
+  .fav-row .set-btn{padding:5px 12px;font-size:12px}
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
@@ -142,7 +181,37 @@
     .main-weather .temp{font-size:104px}
     footer{padding:14px 24px 30px}
     #cityMask>div,#setMask>div{width:min(680px,92vw)}
-  }  .sk-icon{width:80px;height:80px;border-radius:50%;margin:20px auto 16px}
+  }
+  /* 平板中屏微调 */
+  @media (min-width:768px) and (max-width:1199px){
+    .chart{height:200px}
+    .hour-item{min-width:66px}
+  }
+  /* 大屏/桌面宽显 */
+  @media (min-width:1200px){
+    .phone{max-width:1140px}
+    .body-wrap{padding:0 32px 48px}
+    .main-weather .big-icon{font-size:120px}
+    .main-weather .temp{font-size:120px}
+    .main-weather .cond{font-size:24px}
+    .chart{height:220px}
+    .hour-item{min-width:74px;padding:12px 8px}
+    .hour-item .hi{font-size:26px}
+    .hour-item .htemp{font-size:17px}
+    .grid{gap:16px}
+    .gcard{padding:18px 20px}
+    .gcard .v{font-size:26px}
+    .panel{padding:8px 20px}
+    .daily-row .d{width:88px}
+    .daily-row .t{width:110px}
+  }
+  /* 超宽屏极限 */
+  @media (min-width:1800px){
+    .phone{max-width:1280px}
+    .grid{grid-template-columns:repeat(6,1fr)}
+  }
+
+  .sk-icon{width:80px;height:80px;border-radius:50%;margin:20px auto 16px}
   .sk-temp{width:200px;height:64px;margin:0 auto;border-radius:14px}
   .sk-line{width:150px;height:14px;margin:10px auto 0;border-radius:7px}
   .sk-meta{width:220px;height:12px;margin:14px auto 0;border-radius:6px}
@@ -190,6 +259,16 @@
           <button class="set-btn" data-t="auto" onclick="setTheme('auto')">跟随系统</button>
         </span>
       </div>
+      <div class="set-row"><span>外观</span>
+        <span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="set-btn" data-g="classic" onclick="setGlass('classic')">经典</button>
+          <button class="set-btn" data-g="liquid" onclick="setGlass('liquid')">液态玻璃</button>
+        </span>
+      </div>
+      <div class="set-row"><span>常用城市</span>
+        <button class="set-btn" onclick="favCurrent()" id="favBtn">＋ 加入当前城市</button>
+      </div>
+      <div id="favList" style="padding:4px 2px 2px"></div>
       <div class="set-row"><span>本地缓存</span>
         <button class="set-btn" onclick="clearCache()" style="color:#e74c3c">清除缓存</button>
       </div>
@@ -332,7 +411,9 @@ function renderPicker(){
     const total=groups.reduce((n,g)=>n+g.cities.length,0);
     document.getElementById('pickerTitle').textContent='选择省份';
     document.getElementById('cityCount').textContent=groups.length+' 省 · 共 '+total+' 城';
-    list.innerHTML = groups.map(g=>`
+    const favHtml = FAVS.length? `<div style="font-size:12px;color:var(--sub);margin:6px 4px 2px">⭐ 常用城市 · 左右滑动也可切换</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">${FAVS.map(f=>`<div class="prov-item fav-chip${f.file===curCity.file?' active':''}" onclick="switchCity('${f.file}')">${f.name}</div>`).join('')}</div>` : '';
+    list.innerHTML = favHtml + groups.map(g=>`
       <div class="prov-item" onclick="pickProvince('${g.province_file}')">
         <span>${g.province}</span><span style="font-size:12px;color:var(--sub)">${g.cities.length} 城 ›</span>
       </div>`).join('');
@@ -347,6 +428,50 @@ function renderPicker(){
 }
 function pickProvince(pf){ pickerStep='city'; pickerProvince=pf; renderPicker(); }
 function closeCityPicker(){ const m=document.getElementById('cityMask'); if(m) m.style.display='none'; }
+
+// ================= 常用城市 =================
+let FAVS=[]; try{ FAVS=JSON.parse(localStorage.getItem('wx_favs')||'[]'); }catch(e){}
+function saveFavs(){ try{ localStorage.setItem('wx_favs', JSON.stringify(FAVS)); }catch(e){} }
+function favCurrent(){
+  if(!FAVS.find(f=>f.file===curCity.file)){
+    FAVS.push({file:curCity.file, name:curCity.name, province:curCity.province, province_file:curCity.province_file});
+    if(FAVS.length>8) FAVS=FAVS.slice(-8);
+    saveFavs(); toast('已加入常用城市 ⭐');
+  } else toast('已在常用城市中');
+  paintFavs();
+}
+function removeFav(file){ FAVS=FAVS.filter(f=>f.file!==file); saveFavs(); paintFavs(); if(document.getElementById('cityMask').style.display==='block'&&pickerStep==='province') renderPicker(); }
+function paintFavs(){
+  const el=document.getElementById('favList'); if(!el) return;
+  el.innerHTML = FAVS.length
+    ? FAVS.map(f=>`<div class="fav-row"><span>${f.name} · ${f.province}</span><button class="set-btn" onclick="removeFav('${f.file}')">移除</button></div>`).join('')
+    : '<div style="font-size:12px;color:var(--sub);padding:6px 2px">暂无常用城市，点"＋ 加入当前城市"添加（最多 8 个）</div>';
+  const btn=document.getElementById('favBtn'); if(btn) btn.textContent = FAVS.find(f=>f.file===curCity.file) ? '✓ 已在常用' : '＋ 加入当前城市';
+}
+
+// ================= 左右滑动切换城市（仅循环常用城市；触摸/鼠标拖拽，小时卡横向滚动区除外） =================
+(function(){
+  let sx=0,sy=0,active=false,pd=false;
+  const TH=60;
+  function isHScroll(el){ return !!(el && el.closest && (el.closest('.hour-wrap') || el.closest('.hour-list'))); }
+  function inPicker(){ const m=document.getElementById('cityMask'); return m && m.style.display==='block'; }
+  function start(x,y){ sx=x; sy=y; active=true; }
+  function end(x,y){
+    if(!active) return; active=false;
+    const dx=x-sx, dy=y-sy;
+    if(Math.abs(dx)<TH || Math.abs(dx)<=Math.abs(dy)) return;
+    if(!FAVS.length){ toast('还没有常用城市，设置里点"＋ 加入当前城市"后可左右滑动切换'); return; }
+    const i=FAVS.findIndex(f=>f.file===curCity.file);
+    let next = i>=0
+      ? FAVS[ dx<0 ? (i+1)%FAVS.length : (i-1+FAVS.length)%FAVS.length ]
+      : FAVS[ dx<0 ? 0 : FAVS.length-1 ];
+    if(next && next.file!==curCity.file) switchCity(next.file);
+  }
+  document.addEventListener('touchstart',e=>{ if(isHScroll(e.target)||inPicker()) return; const t=e.touches[0]; start(t.clientX,t.clientY); },{passive:true});
+  document.addEventListener('touchend',e=>{ if(!active) return; const t=e.changedTouches[0]; end(t.clientX,t.clientY); },{passive:true});
+  document.addEventListener('pointerdown',e=>{ if(e.pointerType==='touch') return; if(isHScroll(e.target)||inPicker()) return; pd=true; start(e.clientX,e.clientY); });
+  document.addEventListener('pointerup',e=>{ if(!pd) return; pd=false; end(e.clientX,e.clientY); });
+})();
 function showSkeleton(){ document.getElementById('skeleton').style.display='block'; document.getElementById('app').style.display='none'; }
 function parse(text){
   text=text.replace(/^\uFEFF/,'');
@@ -463,6 +588,8 @@ function render(rows, hourly, offline, stale){
   // 深色主题下固定深蓝渐变（避免天气动态色覆盖深色变量）
   document.documentElement.style.setProperty('--sk1', _dark ? '#222c42' : s1);
   document.documentElement.style.setProperty('--sk2', _dark ? '#141a28' : s2);
+  // 天气动效：雨/雪/烈日
+  weatherFx(decideFx(t));
 
   const tag=document.getElementById('offlineTag');
   if(offline){
@@ -561,16 +688,95 @@ function applyTheme(){
 function paintSetBtns(){
   document.querySelectorAll('#setMask .set-btn[data-u]').forEach(b=>b.classList.toggle('on', b.dataset.u===UNIT));
   document.querySelectorAll('#setMask .set-btn[data-t]').forEach(b=>b.classList.toggle('on', b.dataset.t===THEME));
+  document.querySelectorAll('#setMask .set-btn[data-g]').forEach(b=>b.classList.toggle('on', b.dataset.g===GLASS));
 }
-function openSettings(){ paintSetBtns(); document.getElementById('setMask').style.display='block'; }
+function openSettings(){ paintSetBtns(); paintFavs(); document.getElementById('setMask').style.display='block'; }
 function closeSettings(){ document.getElementById('setMask').style.display='none'; }
 function setUnit(u){ UNIT=u; try{ localStorage.setItem('wx_unit',u); }catch(e){} paintSetBtns(); if(document.getElementById('app').style.display!=='none') load(false); }
-function setTheme(t){ THEME=t; try{ localStorage.setItem('wx_theme',t); }catch(e){} paintSetBtns(); applyTheme(); if(typeof charts!=='undefined' && charts.length) load(false); }
+// ================= 外观：经典 / 液态玻璃 =================
+let GLASS='classic'; try{ GLASS=localStorage.getItem('wx_glass')||'classic'; }catch(e){}
+function applyGlass(){ document.documentElement.setAttribute('data-glass', GLASS==='frosted'?'classic':GLASS); }
+function setGlass(g){ GLASS=g; try{ localStorage.setItem('wx_glass',g); }catch(e){} paintSetBtns(); applyGlass(); }
+function setTheme(t){ THEME=t; try{ localStorage.setItem('wx_theme',t); }catch(e){} paintSetBtns(); applyTheme(); if(typeof charts!=='undefined' && charts.length) load(false); if(WFX) weatherFx(WFX.type); }
 function clearCache(){
   try{ const ks=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith('wx_cache_')) ks.push(k);} ks.forEach(k=>localStorage.removeItem(k)); }catch(e){}
   toast('缓存已清除，下拉或点 ⟳ 刷新');
 }
 applyTheme();
+applyGlass();
+
+// ================= 天气动效：雨 / 雪 / 烈日 =================
+let WFX=null;
+/** 根据当天实况判断动效类型 */
+function decideFx(t){
+  if(!t) return null;
+  const snow = (t.avg!=null && t.avg<=2 && t.prob>=40) || (t.high!=null && t.high<=4 && t.prob>=50);
+  if(snow) return 'snow';
+  if(t.prob>=50 || (t.rain!=null && t.rain>=0.5)) return 'rain';
+  if(t.cloud!=null && t.cloud<=30 && t.prob<30 && t.avg!=null && t.avg>=26) return 'sun';
+  return null;
+}
+/** canvas 粒子层：rain 雨滴 / snow 雪花 / sun 烈日光线，页面隐藏自动暂停 */
+function weatherFx(type){
+  if(!type){ if(WFX){ cancelAnimationFrame(WFX.raf); WFX.kill(); WFX.el.remove(); WFX=null; } return; }
+  if(WFX && WFX.type===type) return;
+  if(WFX){ cancelAnimationFrame(WFX.raf); WFX.kill(); WFX.el.remove(); WFX=null; }
+  const el=document.createElement('canvas');
+  el.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none';
+  document.body.insertBefore(el, document.body.firstChild);
+  const c=el.getContext('2d');
+  const DPR=Math.min(2, window.devicePixelRatio||1);
+  let W=0,H=0;
+  const size=()=>{ W=window.innerWidth; H=window.innerHeight; el.width=W*DPR; el.height=H*DPR; c.setTransform(DPR,0,0,DPR,0,0); };
+  size(); window.addEventListener('resize', size);
+  const dark=document.documentElement.getAttribute('data-theme')==='dark';
+  const CFG = type==='rain'
+    ? {n:Math.round(W*H/15000)+20, sp:[8,13], len:[12,18], col:dark?'150,190,235':'120,170,230'}
+    : type==='snow'
+      ? {n:Math.round(W*H/38000)+15, sp:[0.7,2.1], r:[1,3]}
+      : {};
+  const parts=Array.from({length:CFG.n||0},()=>({
+    x:Math.random()*W, y:Math.random()*H,
+    v:CFG.sp[0]+Math.random()*(CFG.sp[1]-CFG.sp[0]),
+    len:CFG.len?CFG.len[0]+Math.random()*(CFG.len[1]-CFG.len[0]):3,
+    r:CFG.r?CFG.r[0]+Math.random()*(CFG.r[1]-CFG.r[0]):2,
+    ph:Math.random()*6.283
+  }));
+  let t0=performance.now();
+  function frame(){
+    if(document.hidden){ WFX.raf=requestAnimationFrame(frame); return; }
+    const now=performance.now(), dt=Math.min(50,now-t0)/16.7; t0=now;
+    c.clearRect(0,0,W,H);
+    if(type==='rain'){
+      c.strokeStyle=`rgba(${CFG.col},.72)`; c.lineWidth=2.2;
+      for(const p of parts){
+        p.y+=p.v*dt; p.x+=p.v*0.22*dt;
+        if(p.y>H+20){ p.y=-20; p.x=Math.random()*W; }
+        c.beginPath(); c.moveTo(p.x,p.y); c.lineTo(p.x-p.v*0.22*3, p.y-p.len); c.stroke();
+      }
+    } else if(type==='snow'){
+      for(const p of parts){
+        p.y+=p.v*dt; p.x+=Math.sin(p.ph+now/900)*0.5;
+        if(p.y>H+12){ p.y=-12; p.x=Math.random()*W; p.ph=Math.random()*6.283; }
+        c.beginPath(); c.arc(p.x,p.y,p.r,0,6.283);
+        c.fillStyle=`rgba(255,255,255,${0.35+Math.random()*0.5})`; c.fill();
+      }
+    } else if(type==='sun'){
+      const gx=W*0.5, gy=H*0.08, R=Math.max(W,H)*0.55;
+      const gr=c.createRadialGradient(gx,gy,0,gx,gy,R);
+      gr.addColorStop(0,'rgba(255,220,120,.34)'); gr.addColorStop(.3,'rgba(255,190,80,.14)'); gr.addColorStop(1,'rgba(255,180,60,0)');
+      c.fillStyle=gr; c.fillRect(0,0,W,H);
+      c.save(); c.translate(gx,gy); c.rotate(now/18000); c.strokeStyle='rgba(255,215,130,.28)'; c.lineWidth=2.5;
+      for(let i=0;i<12;i++){ c.rotate(Math.PI/6); c.beginPath(); c.moveTo(70,0); c.lineTo(R*0.92,0); c.stroke(); }
+      c.restore();
+      const core=c.createRadialGradient(gx,gy,0,gx,gy,90);
+      core.addColorStop(0,'rgba(255,235,160,.6)'); core.addColorStop(1,'rgba(255,225,130,0)');
+      c.fillStyle=core; c.fillRect(0,0,W,H);
+    }
+    WFX.raf=requestAnimationFrame(frame);
+  }
+  WFX={type, el, c, raf:requestAnimationFrame(frame), kill:()=>window.removeEventListener('resize',size)};
+}
 
 let toastTimer;
 function toast(msg){let el=document.getElementById('toast'); if(!el){el=document.createElement('div');el.id='toast';
