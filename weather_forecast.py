@@ -14,8 +14,16 @@
 from __future__ import annotations   # 注解惰性求值：无 numpy/pandas 环境也能 import
 
 import warnings, os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import argparse
+
+# GitHub Actions 服务器默认 UTC：所有"今天"一律按北京时间(UTC+8)锚定，
+# 否则北京 04:00 的定时任务产出的是 UTC 昨天的日期（数据日期落后一天）。
+_BJ = timezone(timedelta(hours=8))
+def _bjnow():
+    return datetime.now(_BJ)
+def _bjtoday():
+    return _bjnow().date()
 
 # 重依赖惰性加载：--gen-cities-json（finalize job，未装依赖）只走纯标准库路径；
 # 计算预报（forecast job，已 pip install）才会真正加载 numpy/pandas/matplotlib/requests。
@@ -112,7 +120,7 @@ NWP_SOURCES = {
 # 1. 数据
 # =============================================================
 def fetch_history(years: int) -> pd.DataFrame:
-    end = (datetime.now() - timedelta(days=2)).date()
+    end = (_bjtoday() - timedelta(days=2))
     start = end - timedelta(days=365 * years)
     print(f"[1/7] 拉历史观测 {start} ~ {end} ...")
     r = SESSION.get("https://archive-api.open-meteo.com/v1/archive", params={
@@ -529,7 +537,7 @@ def run_city(city: dict):
             print(f"      {name} 失败: {e}")
 
     # 预报锚定今天：未来 N 天 = 今天 ~ 今天+N-1（而非从历史末+1）
-    start_date = datetime.now().date()
+    start_date = _bjtoday()
 
     # 逐小时预报（GFS/ECMWF 均值，72 小时）
     try:
@@ -589,7 +597,7 @@ def run_city(city: dict):
         print(f"      aux 保存失败（忽略）: {e}")
 
     print("[6/7] 画图 ...")
-    recent60 = df[df["ds"] >= datetime.now() - timedelta(days=60)]
+    recent60 = df[df["ds"] >= _bjnow() - timedelta(days=60)]
     fig, ax = plt.subplots(figsize=(11, 5.5))
     ax.plot(recent60["ds"], recent60["temperature_2m_mean"], "-", color="#888", label="历史平均温(近60天)")
     ax.fill_between(recent60["ds"], recent60["temperature_2m_min"], recent60["temperature_2m_max"],
