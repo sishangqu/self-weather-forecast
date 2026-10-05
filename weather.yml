@@ -1,0 +1,148 @@
+name: Self Weather Forecast
+
+# cron 是 UTC 时间。北京时间每天 04:00 跑 = UTC 前一天 20:00。
+on:
+  schedule:
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write      # 允许把生成的图片/CSV 提交回仓库
+
+jobs:
+  # ============ 并行计算：297 城分 30 组，每组 10 城串行；30 个 job 并行 ============
+  # 说明：GitHub 单个 workflow 最多 256 个 job，所以不能一城一 job，改为一组一 job。
+  forecast:
+    name: group-${{ strategy.job-index }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false          # 单个组失败不影响其他组
+      matrix:
+        include:
+          - group: shijiazhuang,tangshan,qinhuangdao,handan,xingtai,baoding,zhangjiakou,chengde,cangzhou,langfang
+          - group: hengshui,taiyuan,datong,yangquan,changzhi,jincheng,shuozhou,jinzhong,yuncheng,xinzhou
+          - group: linfen,huhehaote,baotou,wuhai,chifeng,tongliao,eerduosi,hulunbeier,bayannaoer,wulanchabu
+          - group: shenyang,dalian,anshan,fushun,benxi,dandong,jinzhou,yingkou,fuxin,liaoyang
+          - group: panjin,tieling,chaoyang,huludao,changchun,jilin,siping,liaoyuan,tonghua,baishan
+          - group: songyuan,baicheng,haerbin,qiqihaer,jixi,hegang,shuangyashan,daqing,yichun,jiamusi
+          - group: qitaihe,mudanjiang,heihe,suihua,nanjing,wuxi,xuzhou,changzhou,suzhou,nantong
+          - group: lianyungang,huaian,yancheng,yangzhou,zhenjiang,taizhou_js,suqian,hangzhou,ningbo,wenzhou
+          - group: jiaxing,huzhou,shaoxing,jinhua,quzhou,zhoushan,taizhou,lishui,hefei,wuhu
+          - group: bengbu,huainan,maanshan,huaibei,tongling,anqing,huangshan,chuzhou,fuyang,suzhou_ah
+          - group: liuan,bozhou,chizhou,xuancheng,fuzhou,xiamen,putian,sanming,quanzhou,zhangzhou
+          - group: nanping,longyan,ningde,nanchang,jingdezhen,pingxiang,jiujiang,xinyu,yingtan,ganzhou
+          - group: jian,yichun_jx,fuzhou_jx,shangrao,jinan,qingdao,zibo,zaozhuang,dongying,yantai
+          - group: weifang,jining,weihai,rizhao,linyi,dezhou,liaocheng,binzhou,heze,zhengzhou
+          - group: kaifeng,luoyang,pingdingshan,anyang,hebi,xinxiang,jiaozuo,puyang,xuchang,luohe
+          - group: sanmenxia,nanyang,shangqiu,xinyang,zhoukou,zhumadian,wuhan,huangshi,shiyan,yichang
+          - group: xiangyang,ezhou,jingmen,xiaogan,jingzhou,huanggang,xianning,suizhou,changsha,zhuzhou
+          - group: xiangtan,hengyang,shaoyang,yueyang,changde,zhangjiajie,yiyang,chenzhou,yongzhou,huaihua
+          - group: loudi,guangzhou,shaoguan,shenzhen,zhuhai,shantou,foshan,jiangmen,zhanjiang,maoming
+          - group: zhaoqing,huizhou,meizhou,shanwei,heyuan,yangjiang,qingyuan,dongguan,zhongshan,chaozhou
+          - group: jieyang,yunfu,nanning,liuzhou,guilin,wuzhou,beihai,fangchenggang,qinzhou,guigang
+          - group: yulin,baise,hezhou,hechi,laibin,chongzuo,haikou,sanya,danzhou,chengdu
+          - group: zigong,panzhihua,luzhou,deyang,mianyang,guangyuan,suining,neijiang,leshan,nanchong
+          - group: meishan,yibin,guangan,dazhou,yaan,bazhong,ziyang,guiyang,liupanshui,zunyi
+          - group: anshun,bijie,tongren,kunming,qujing,yuxi,baoshan,zhaotong,lijiang,puer
+          - group: lincang,lasa,rikaze,changdu,linzhi,shannan,naqu,xian,tongchuan,baoji
+          - group: xianyang,weinan,yanan,hanzhong,yulin_sx,ankang,shangluo,lanzhou,jiayuguan,jinchang
+          - group: baiyin,tianshui,wuwei,zhangye,pingliang,jiuquan,qingyang,dingxi,longnan,xining
+          - group: haidong,yinchuan,shizuishan,wuzhong,guyuan,zhongwei,wulumuqi,karamay,turpan,hami
+          - group: beijing,tianjin,shanghai,chongqing,lvliang,taian,sansha
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Chinese font (WenQuanYi)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-wqy-zenhei
+          fc-cache -f
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 只算本组城市（逗号分隔，脚本内逐城处理）
+      - name: Run forecast (${{ matrix.group }})
+        run: python weather_forecast.py --city "${{ matrix.group }}"
+
+      # 产物暂存 artifact（每个 job 上传各自的 data/，由 finalize 合并提交）
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: weather-${{ strategy.job-index }}
+          path: data/
+          retention-days: 90
+          if-no-files-found: warn
+
+  # ============ 合并：等全部组算完，统一提交回仓库 ============
+  finalize:
+    name: Merge and commit
+    runs-on: ubuntu-latest
+    needs: forecast
+    if: always()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 下载所有组的 artifact（v4 + merge-multiple 合并到一个目录，避免逐目录遍历漏组）
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: weather-*
+          merge-multiple: true
+
+      # 兼容两种结构合并到根 data/；并做完整性门禁：
+      # 合并后 forecast.csv 必须 = 297（cities.csv 行数），否则直接失败，绝不静默提交残缺数据
+      - name: Merge artifact data
+        run: |
+          rm -rf data && mkdir -p data
+          if [ -d artifacts/data ]; then
+            cp -r artifacts/data/./ data/
+          else
+            cp -r artifacts/./ data/
+          fi
+          N=$(find data -type f -name '*_forecast.csv' | wc -l)
+          EXPECT=$(( $(wc -l < cities.csv | tr -d ' \r') - 1 ))
+          echo "合并后 *_forecast.csv 数: $N（应为 $EXPECT）"
+          echo "合并后总文件数: $(find data -type f | wc -l)"
+          if [ "$N" -lt "$EXPECT" ]; then
+            echo "❌ 合并不完整（$N/$EXPECT），中止提交"
+            exit 1
+          fi
+          rm -rf artifacts weather-*
+
+      # 生成 cities.json（前端城市列表，纯标准库无需装依赖）
+      - name: Generate cities.json
+        run: python weather_forecast.py --gen-cities-json
+
+      - name: Commit results back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f data cities.json *.csv *.json *.png
+          git commit -m "auto: forecast $(date -u +%Y-%m-%d)" || echo "nothing changed"
+          git push
+
+      # 汇总成败 → 钉钉 + 邮件通知（secrets 未配置时自动跳过对应渠道）
+      - name: Notify (DingTalk + Email)
+        env:
+          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: python .github/notify.py
