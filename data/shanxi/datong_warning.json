@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "title": "山西省长治市上党区气象台发布大雾黄色预警信号",
+    "time": "2026/10/25 05:49",
+    "url": "http://www.nmc.cn/publish/alarm/14040441600000_20261025054900.html",
+    "pic": "https://image.nmc.cn/assets/img/alarm/p0005003.png"
+  },
+  {
+    "title": "山西省长治市襄垣县气象台发布大雾黄色预警信号",
+    "time": "2026/10/25 05:12",
+    "url": "http://www.nmc.cn/publish/alarm/14042341600000_20261025051200.html",
+    "pic": "https://image.nmc.cn/assets/img/alarm/p0005003.png"
+  },
+  {
+    "title": "山西省长治市屯留区气象台发布大雾黄色预警信号",
+    "time": "2026/10/25 02:47",
+    "url": "http://www.nmc.cn/publish/alarm/14040541600000_20261025024700.html",
+    "pic": "https://image.nmc.cn/assets/img/alarm/p0005003.png"
+  }
+]
